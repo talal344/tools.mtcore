@@ -1,0 +1,75 @@
+.main {
+  min-height: 100vh;
+  padding-top: var(--nav-height);
+}
+
+.header {
+  padding: 100px 0 80px;
+  text-align: center;
+}
+
+.title {
+  font-size: 3.5rem;
+  margin-bottom: 24px;
+}
+
+.subtitle {
+  color: var(--text-muted);
+  max-width: 600px;
+  margin: 0 auto;
+  font-size: 1.2rem;
+  line-height: 1.6;
+}
+
+.contentSection {
+  padding-bottom: 120px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+}
+
+.glassCard {
+  background: var(--card-bg);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: 32px;
+  padding: 50px;
+}
+
+.glassCard h2 {
+  margin-bottom: 24px;
+  color: #fff;
+}
+
+.glassCard p {
+  color: var(--text-muted);
+  line-height: 1.8;
+  font-size: 1.1rem;
+}
+
+.list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.list li {
+  color: var(--text-muted);
+  font-size: 1.05rem;
+  display: flex;
+  gap: 12px;
+}
+
+.list li strong {
+  color: var(--primary);
+}
+
+@media (max-width: 900px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}

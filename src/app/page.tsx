@@ -1,66 +1,50 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+import Navbar from '@/components/layout/Navbar';
+import Footer from '@/components/layout/Footer';
+import Hero from '@/components/home/Hero';
+import FeaturedTools from '@/components/home/FeaturedTools';
+import styles from './page.module.css';
 
 export default function Home() {
   return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className={styles.intro}>
-          <h1>To get started, edit the page.tsx file.</h1>
-          <p>
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <main className={styles.main}>
+      <Navbar />
+      
+      <Hero />
+      
+      <FeaturedTools />
+      
+      {/* Benefits Section */}
+      <section className={styles.benefits}>
+        <div className="container">
+          <div className={styles.benefitsGrid}>
+            <div className={styles.benefitCard}>
+              <h3 className="futuristic">Ultra Fast</h3>
+              <p>Process your files in seconds with our optimized cloud infrastructure.</p>
+            </div>
+            <div className={styles.benefitCard}>
+              <h3 className="futuristic">Secure</h3>
+              <p>Your data is encrypted and deleted immediately after processing.</p>
+            </div>
+            <div className={styles.benefitCard}>
+              <h3 className="futuristic">Scalable</h3>
+              <p>Built on a platform that grows with your business needs.</p>
+            </div>
+          </div>
         </div>
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className={styles.secondary}
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+      </section>
+      
+      {/* Testimonials Placeholder */}
+      <section className={styles.testimonials}>
+        <div className="container">
+          <h2 className={styles.sectionTitle}>Trusted by <span className="text-gradient">Industry Experts</span></h2>
+          <div className={styles.testimonialContainer}>
+            <p className={styles.placeholderText}>&quot;UltraTools has transformed our EDI workflow. The speed and precision are unmatched.&quot;</p>
+            <span className={styles.author}>— Placeholder Client</span>
+          </div>
         </div>
-      </main>
-    </div>
+      </section>
+      
+      <Footer />
+    </main>
   );
 }
