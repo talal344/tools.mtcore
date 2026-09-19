@@ -365,9 +365,20 @@ const CvBuilderClient = () => {
     setTimeout(() => setSuccessMsg(null), 3000);
   };
 
+  const [downloadProgress, setDownloadProgress] = useState<{
+    isOpen: boolean;
+    percent: number;
+    status: string;
+  }>({
+    isOpen: false,
+    percent: 0,
+    status: '',
+  });
+
   const handleDownloadPDF = async () => {
     setIsLoading(true);
     setError(null);
+    setDownloadProgress({ isOpen: true, percent: 15, status: 'Initializing PDF engine...' });
     try {
       const resumeEl = document.getElementById('resume-preview');
       if (!resumeEl) {
@@ -377,18 +388,7 @@ const CvBuilderClient = () => {
       const html2canvas = (await import('html2canvas')).default;
       const { jsPDF } = await import('jspdf');
 
-      const pageGuides = resumeEl.querySelectorAll<HTMLElement>('[class*="pageGuide"]');
-      pageGuides.forEach(g => { g.style.display = 'none'; });
-
-      const canvas = await html2canvas(resumeEl, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        backgroundColor: design.backgroundColor || '#ffffff',
-      });
-
-      pageGuides.forEach(g => { g.style.display = ''; });
-
+      const pageElements = resumeEl.querySelectorAll<HTMLElement>('.resume-page');
       const pdf = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
@@ -396,30 +396,52 @@ const CvBuilderClient = () => {
         compress: true,
       });
 
-      const pdfWidth = pdf.internal.pageSize.getWidth(); // 210mm
-      const pdfHeight = pdf.internal.pageSize.getHeight(); // 297mm
-      const totalImgHeight = (canvas.height * pdfWidth) / canvas.width;
-      const imgData = canvas.toDataURL('image/png', 1.0);
+      if (pageElements && pageElements.length > 0) {
+        for (let i = 0; i < pageElements.length; i++) {
+          const stepPercent = Math.round(25 + ((i + 1) / pageElements.length) * 60);
+          setDownloadProgress({
+            isOpen: true,
+            percent: stepPercent,
+            status: `Rendering Page ${i + 1} of ${pageElements.length}...`,
+          });
 
-      let heightLeft = totalImgHeight;
-      let position = 0;
-
-      // Page 1
-      pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, totalImgHeight);
-      heightLeft -= pdfHeight;
-
-      // Subsequent pages ONLY IF content genuinely exceeds 1 page
-      while (heightLeft > 5) {
-        position -= pdfHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, totalImgHeight);
-        heightLeft -= pdfHeight;
+          if (i > 0) {
+            pdf.addPage();
+          }
+          const pageCanvas = await html2canvas(pageElements[i], {
+            scale: 2.5,
+            useCORS: true,
+            logging: false,
+            backgroundColor: design.backgroundColor || '#ffffff',
+          });
+          const imgData = pageCanvas.toDataURL('image/png', 1.0);
+          pdf.addImage(imgData, 'PNG', 0, 0, 210, 297);
+        }
+      } else {
+        setDownloadProgress({ isOpen: true, percent: 60, status: 'Rendering document...' });
+        const canvas = await html2canvas(resumeEl, {
+          scale: 2.5,
+          useCORS: true,
+          logging: false,
+          backgroundColor: design.backgroundColor || '#ffffff',
+        });
+        const imgData = canvas.toDataURL('image/png', 1.0);
+        pdf.addImage(imgData, 'PNG', 0, 0, 210, 297);
       }
 
+      setDownloadProgress({ isOpen: true, percent: 95, status: 'Compiling PDF file...' });
       const filename = `${(formData.personal?.fullName || resumeTitle || 'Resume').trim().replace(/\s+/g, '_')}_CV.pdf`;
       pdf.save(filename);
+
+      setDownloadProgress({ isOpen: true, percent: 100, status: 'Download Complete!' });
+      setTimeout(() => {
+        setDownloadProgress({ isOpen: false, percent: 0, status: '' });
+        setSuccessMsg('✅ Resume downloaded successfully!');
+        setTimeout(() => setSuccessMsg(null), 4000);
+      }, 700);
     } catch (err) { 
       console.error('PDF export error, falling back to print dialog:', err);
+      setDownloadProgress({ isOpen: false, percent: 0, status: '' });
       handlePrint();
     }
     finally { setIsLoading(false); }
@@ -500,6 +522,22 @@ const CvBuilderClient = () => {
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
           <span>{successMsg}</span>
           <button className={styles.closeError} onClick={() => setSuccessMsg(null)}>×</button>
+        </div>
+      )}
+      {downloadProgress.isOpen && (
+        <div className={styles.progressOverlay}>
+          <div className={styles.progressCard}>
+            <div className={styles.progressIcon}>📄</div>
+            <h3 className={styles.progressTitle}>Generating High-Res PDF</h3>
+            <p className={styles.progressDesc}>{downloadProgress.status}</p>
+            <div className={styles.progressBarTrack}>
+              <div className={styles.progressBarFill} style={{ width: `${downloadProgress.percent}%` }} />
+            </div>
+            <div className={styles.progressFooter}>
+              <span>Multi-Page Vector Export</span>
+              <span className={styles.progressPercent}>{downloadProgress.percent}%</span>
+            </div>
+          </div>
         </div>
       )}
       <header className={styles.toolbar}>
