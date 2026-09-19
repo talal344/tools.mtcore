@@ -1,51 +1,11 @@
 /* --- Base Document & Print Styles --- */
-.resumeContainer {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 28px;
-  width: 100%;
-}
-
-.pageBreakVisualIndicator {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  width: 210mm;
-  color: rgba(255, 255, 255, 0.45);
-  font-size: 0.8rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  user-select: none;
-}
-
-.pageBreakLine {
-  flex: 1;
-  height: 1px;
-  background: rgba(255, 255, 255, 0.15);
-  border: none;
-}
-
-.pageBadge {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  padding: 4px 14px;
-  border-radius: 20px;
-  color: #38bdf8;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
 .cvDocument {
   width: 210mm;
   min-height: 297mm;
   height: auto;
   background: #ffffff;
   color: #1f2937;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.45);
   box-sizing: border-box;
   margin: 0 auto;
   position: relative;
@@ -53,25 +13,44 @@
   border-radius: 2px;
 }
 
+/* Subtle dashed guideline at 297mm mark if document is longer than 297mm */
+.pageGuide2 {
+  position: absolute;
+  top: 297mm;
+  left: 0;
+  right: 0;
+  height: 0;
+  border-top: 1.5px dashed rgba(37, 99, 235, 0.35);
+  pointer-events: none;
+  display: flex;
+  justify-content: flex-end;
+  z-index: 10;
+}
+
+.pageGuide2::after {
+  content: 'Page 2';
+  font-size: 7.5pt;
+  font-weight: 700;
+  color: #2563eb;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  padding: 1px 8px;
+  border-radius: 4px;
+  margin-top: -9px;
+  margin-right: 15px;
+  letter-spacing: 0.04em;
+}
+
 @media print {
-  .pageBreakVisualIndicator {
+  .pageGuide2 {
     display: none !important;
-  }
-  .resumeContainer {
-    gap: 0 !important;
   }
   .cvDocument {
     box-shadow: none !important;
     margin: 0 !important;
     width: 210mm !important;
     min-height: 297mm !important;
-    height: 297mm !important;
-    page-break-after: always;
-    break-after: page;
-  }
-  .cvDocument:last-child {
-    page-break-after: avoid;
-    break-after: avoid;
+    height: auto !important;
   }
 }
 

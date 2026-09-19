@@ -377,7 +377,18 @@ const CvBuilderClient = () => {
       const html2canvas = (await import('html2canvas')).default;
       const { jsPDF } = await import('jspdf');
 
-      const pageElements = resumeEl.querySelectorAll<HTMLElement>('.resume-page');
+      const pageGuides = resumeEl.querySelectorAll<HTMLElement>('[class*="pageGuide"]');
+      pageGuides.forEach(g => { g.style.display = 'none'; });
+
+      const canvas = await html2canvas(resumeEl, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: design.backgroundColor || '#ffffff',
+      });
+
+      pageGuides.forEach(g => { g.style.display = ''; });
+
       const pdf = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
@@ -385,29 +396,24 @@ const CvBuilderClient = () => {
         compress: true,
       });
 
-      if (pageElements && pageElements.length > 0) {
-        for (let i = 0; i < pageElements.length; i++) {
-          if (i > 0) {
-            pdf.addPage();
-          }
-          const pageCanvas = await html2canvas(pageElements[i], {
-            scale: 2,
-            useCORS: true,
-            logging: false,
-            backgroundColor: '#ffffff',
-          });
-          const imgData = pageCanvas.toDataURL('image/png', 1.0);
-          pdf.addImage(imgData, 'PNG', 0, 0, 210, 297);
-        }
-      } else {
-        const canvas = await html2canvas(resumeEl, {
-          scale: 2,
-          useCORS: true,
-          logging: false,
-          backgroundColor: '#ffffff',
-        });
-        const imgData = canvas.toDataURL('image/png', 1.0);
-        pdf.addImage(imgData, 'PNG', 0, 0, 210, 297);
+      const pdfWidth = pdf.internal.pageSize.getWidth(); // 210mm
+      const pdfHeight = pdf.internal.pageSize.getHeight(); // 297mm
+      const totalImgHeight = (canvas.height * pdfWidth) / canvas.width;
+      const imgData = canvas.toDataURL('image/png', 1.0);
+
+      let heightLeft = totalImgHeight;
+      let position = 0;
+
+      // Page 1
+      pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, totalImgHeight);
+      heightLeft -= pdfHeight;
+
+      // Subsequent pages ONLY IF content genuinely exceeds 1 page
+      while (heightLeft > 5) {
+        position -= pdfHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, totalImgHeight);
+        heightLeft -= pdfHeight;
       }
 
       const filename = `${(formData.personal?.fullName || resumeTitle || 'Resume').trim().replace(/\s+/g, '_')}_CV.pdf`;
@@ -436,9 +442,8 @@ const CvBuilderClient = () => {
           <style>
             @page { size: A4; margin: 0; }
             body { margin: 0; padding: 0; background: #fff !important; }
-            .resume-page { box-shadow: none !important; margin: 0 auto !important; width: 210mm !important; min-height: 297mm !important; height: 297mm !important; page-break-after: always; break-after: page; }
-            .resume-page:last-child { page-break-after: avoid; break-after: avoid; }
-            .pageBreakVisualIndicator { display: none !important; }
+            #resume-preview { box-shadow: none !important; margin: 0 auto !important; width: 210mm !important; min-height: 297mm !important; height: auto !important; overflow: visible !important; }
+            [class*="pageGuide"] { display: none !important; }
           </style>
         </head>
         <body>
