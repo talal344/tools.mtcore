@@ -1,7 +1,7 @@
 'use client';
 /* eslint-disable @next/next/no-img-element */
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import styles from './CvBuilderClient.module.css';
 import {
   DndContext,
@@ -183,6 +183,32 @@ const CvBuilderClient = () => {
   const [formData, setFormData] = useState<CVData>(INITIAL_FORM_DATA);
   const [history, setHistory] = useState<unknown[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
+  const [forcePage2, setForcePage2] = useState<boolean | null>(null);
+  const abortDownloadRef = useRef(false);
+
+  const isPage2Active = useMemo(() => {
+    if (forcePage2 !== null && forcePage2 !== undefined) {
+      return forcePage2;
+    }
+    const techSkillsCount = (formData.skills?.technical || '').split(',').filter(Boolean).length;
+    const softSkillsCount = (formData.skills?.soft || '').split(',').filter(Boolean).length;
+    const estHeight =
+      130 +
+      (formData.aiSummary ? 80 : 0) +
+      (formData.experience?.length || 0) * 90 +
+      (formData.education?.length || 0) * 50 +
+      (formData.projects?.length || 0) * 70 +
+      (techSkillsCount > 0 || softSkillsCount > 0 ? 85 : 0) +
+      (formData.certifications?.length || 0) * 40 +
+      (formData.awards?.length || 0) * 50 +
+      (formData.publications?.length || 0) * 55 +
+      (formData.volunteer?.length || 0) * 65 +
+      (formData.languages?.length > 0 ? 45 : 0) +
+      (formData.interests?.length > 0 ? 45 : 0) +
+      (formData.profiles?.length > 0 ? 45 : 0) +
+      (formData.references?.trim() ? 45 : 0);
+    return estHeight > 1050;
+  }, [forcePage2, formData]);
 
   const pushHistory = (data: unknown) => {
     const newHistory = history.slice(0, historyIndex + 1);
@@ -375,11 +401,19 @@ const CvBuilderClient = () => {
     status: '',
   });
 
+  const handleCancelDownload = () => {
+    abortDownloadRef.current = true;
+    setDownloadProgress({ isOpen: false, percent: 0, status: '' });
+    setIsLoading(false);
+  };
+
   const handleDownloadPDF = async () => {
     setIsLoading(true);
     setError(null);
+    abortDownloadRef.current = false;
 
     const setProgressAsync = async (percent: number, status: string, delayMs = 90) => {
+      if (abortDownloadRef.current) return;
       setDownloadProgress({ isOpen: true, percent, status });
       await new Promise(resolve => setTimeout(resolve, delayMs));
     };
@@ -391,11 +425,13 @@ const CvBuilderClient = () => {
       }
 
       await setProgressAsync(12, 'Initializing high-resolution PDF engine...', 120);
+      if (abortDownloadRef.current) return;
 
       const html2canvas = (await import('html2canvas')).default;
       const { jsPDF } = await import('jspdf');
 
       await setProgressAsync(25, 'Preparing document pages...', 100);
+      if (abortDownloadRef.current) return;
 
       const pageElements = resumeEl.querySelectorAll<HTMLElement>('.resume-page');
       const pdf = new jsPDF({
@@ -408,6 +444,8 @@ const CvBuilderClient = () => {
       if (pageElements && pageElements.length > 0) {
         const totalPages = pageElements.length;
         for (let i = 0; i < totalPages; i++) {
+          if (abortDownloadRef.current) return;
+
           const startPercent = Math.round(25 + (i / totalPages) * 55);
           const endPercent = Math.round(25 + ((i + 1) / totalPages) * 55);
 
@@ -416,6 +454,7 @@ const CvBuilderClient = () => {
             `Capturing Page ${i + 1} of ${totalPages} in vector quality...`,
             120
           );
+          if (abortDownloadRef.current) return;
 
           if (i > 0) {
             pdf.addPage();
@@ -427,6 +466,8 @@ const CvBuilderClient = () => {
             logging: false,
             backgroundColor: design.backgroundColor || '#ffffff',
           });
+          if (abortDownloadRef.current) return;
+
           const imgData = pageCanvas.toDataURL('image/png', 1.0);
           pdf.addImage(imgData, 'PNG', 0, 0, 210, 297);
 
@@ -435,36 +476,53 @@ const CvBuilderClient = () => {
             `Page ${i + 1} of ${totalPages} rendered successfully`,
             100
           );
+          if (abortDownloadRef.current) return;
         }
       } else {
         await setProgressAsync(50, 'Rendering document...', 120);
+        if (abortDownloadRef.current) return;
+
         const canvas = await html2canvas(resumeEl, {
           scale: 2.5,
           useCORS: true,
           logging: false,
           backgroundColor: design.backgroundColor || '#ffffff',
         });
+        if (abortDownloadRef.current) return;
+
         const imgData = canvas.toDataURL('image/png', 1.0);
         pdf.addImage(imgData, 'PNG', 0, 0, 210, 297);
         await setProgressAsync(80, 'Document captured successfully', 100);
+        if (abortDownloadRef.current) return;
       }
 
+      if (abortDownloadRef.current) return;
+
       await setProgressAsync(92, 'Compiling and saving PDF file...', 150);
+      if (abortDownloadRef.current) return;
+
       const filename = `${(formData.personal?.fullName || resumeTitle || 'Resume').trim().replace(/\s+/g, '_')}_CV.pdf`;
       pdf.save(filename);
 
       await setProgressAsync(100, 'Download Complete!', 400);
       setTimeout(() => {
-        setDownloadProgress({ isOpen: false, percent: 0, status: '' });
-        setSuccessMsg('✅ Resume downloaded successfully!');
-        setTimeout(() => setSuccessMsg(null), 4000);
-      }, 600);
+        if (!abortDownloadRef.current) {
+          setDownloadProgress({ isOpen: false, percent: 0, status: '' });
+          setSuccessMsg('✅ Resume downloaded successfully!');
+          setTimeout(() => setSuccessMsg(null), 4000);
+        }
+      }, 500);
     } catch (err) { 
+      if (abortDownloadRef.current) return;
       console.error('PDF export error, falling back to print dialog:', err);
       setDownloadProgress({ isOpen: false, percent: 0, status: '' });
       handlePrint();
     }
-    finally { setIsLoading(false); }
+    finally { 
+      if (!abortDownloadRef.current) {
+        setIsLoading(false); 
+      }
+    }
   };
 
   const handlePrint = () => {
@@ -545,8 +603,22 @@ const CvBuilderClient = () => {
         </div>
       )}
       {downloadProgress.isOpen && (
-        <div className={styles.progressOverlay}>
+        <div 
+          className={styles.progressOverlay}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) handleCancelDownload();
+          }}
+        >
           <div className={styles.progressCard}>
+            <button 
+              type="button" 
+              className={styles.progressCloseBtn} 
+              onClick={handleCancelDownload}
+              title="Cancel & Close"
+              aria-label="Cancel download"
+            >
+              ✕
+            </button>
             <div className={styles.progressIcon}>📄</div>
             <h3 className={styles.progressTitle}>Generating High-Res PDF</h3>
             <p className={styles.progressDesc}>{downloadProgress.status}</p>
@@ -557,6 +629,13 @@ const CvBuilderClient = () => {
               <span>Multi-Page Vector Export</span>
               <span className={styles.progressPercent}>{downloadProgress.percent}%</span>
             </div>
+            <button 
+              type="button" 
+              className={styles.progressCancelBtn} 
+              onClick={handleCancelDownload}
+            >
+              Cancel Download
+            </button>
           </div>
         </div>
       )}
@@ -573,6 +652,14 @@ const CvBuilderClient = () => {
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-15 9 9 0 0 1 6 2.3L21 13"/></svg>
             </button>
           </div>
+          <button 
+            type="button" 
+            className={isPage2Active ? styles.pageActiveBtn : styles.secondaryBtn}
+            onClick={() => setForcePage2(isPage2Active ? false : true)}
+            title={isPage2Active ? "2 Pages Active. Click to merge onto 1 page." : "Click to add 2nd page to resume"}
+          >
+            {isPage2Active ? '📄 2 Pages' : '➕ Add 2nd Page'}
+          </button>
           <button className={styles.secondaryBtn} onClick={handlePrint}>🖨️ Print</button>
           <button className={styles.secondaryBtn} onClick={handleGenerateAI} disabled={isLoading}>✨ AI Polish</button>
           <button className={styles.primaryBtn} onClick={handleDownloadPDF} disabled={isLoading}>Download PDF</button>
@@ -850,11 +937,54 @@ const CvBuilderClient = () => {
 
         {/* Section 2: Middle Live Preview Pane */}
         <div className={styles.previewPane}>
+          <div className={styles.previewControlBar}>
+            <div className={styles.previewPageStatus}>
+              <span className={isPage2Active ? styles.previewPageBadgeMulti : styles.previewPageBadgeSingle}>
+                {isPage2Active ? '📄 2 Pages' : '📄 1 Page'}
+              </span>
+              <span className={styles.previewPageStatusText}>
+                {forcePage2 === null
+                  ? '(Auto split)'
+                  : forcePage2 === true
+                  ? '(2nd Page forced)'
+                  : '(1 Page forced)'}
+              </span>
+            </div>
+
+            <div className={styles.previewPageControls}>
+              <button
+                type="button"
+                className={`${styles.pageModeTab} ${forcePage2 === false ? styles.pageModeTabActive : ''}`}
+                onClick={() => setForcePage2(false)}
+                title="Fit everything on 1 page"
+              >
+                1 Page
+              </button>
+              <button
+                type="button"
+                className={`${styles.pageModeTab} ${forcePage2 === null ? styles.pageModeTabActive : ''}`}
+                onClick={() => setForcePage2(null)}
+                title="Auto split when content exceeds 1 page"
+              >
+                ⚡ Auto
+              </button>
+              <button
+                type="button"
+                className={`${styles.pageModeTab} ${forcePage2 === true ? styles.pageModeTabActive : ''}`}
+                onClick={() => setForcePage2(true)}
+                title="Add 2nd page"
+              >
+                ➕ Add 2nd Page
+              </button>
+            </div>
+          </div>
+
           <CvTemplateRenderer 
             formData={formData}
             selectedTemplate={selectedTemplate}
             typography={typography}
             design={design}
+            forcePage2={forcePage2}
           />
         </div>
 

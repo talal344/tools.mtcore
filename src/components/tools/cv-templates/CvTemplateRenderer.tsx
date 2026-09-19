@@ -106,6 +106,7 @@ interface CvTemplateRendererProps {
     backgroundColor: string;
     sidebarWidth?: number;
   };
+  forcePage2?: boolean | null;
 }
 
 export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
@@ -113,6 +114,7 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
   selectedTemplate,
   typography,
   design,
+  forcePage2,
 }) => {
   const pColor = design.primaryColor || '#2563eb';
   const tColor = design.textColor || '#1f2937';
@@ -131,7 +133,8 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
 
   // Height-based page split: estimate total content height in px.
   // A4 page content area ≈ 1050px at standard rendering (297mm - padding).
-  // Only split to Page 2 when content genuinely won't fit on Page 1.
+  // Only split to Page 2 when content genuinely won't fit on Page 1,
+  // or when forcePage2 is explicitly requested by the user.
   const estimatedHeight =
     130 + // Header (name, title, contact)
     (formData.aiSummary ? 80 : 0) +
@@ -148,7 +151,9 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
     (formData.profiles?.length > 0 ? 45 : 0) +
     (formData.references?.trim() ? 45 : 0);
 
-  const hasPage2 = estimatedHeight > 1050;
+  const hasPage2 = forcePage2 !== undefined && forcePage2 !== null
+    ? forcePage2
+    : estimatedHeight > 1050;
 
   const docBaseStyle: React.CSSProperties = {
     fontFamily: `${typography.bodyFont}, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`,
@@ -600,6 +605,39 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
     );
   };
 
+  const hasPage2Content = Boolean(
+    (formData.certifications && formData.certifications.length > 0) ||
+    (formData.awards && formData.awards.length > 0) ||
+    (formData.publications && formData.publications.length > 0) ||
+    (formData.volunteer && formData.volunteer.length > 0) ||
+    (formData.languages && formData.languages.length > 0) ||
+    (formData.interests && formData.interests.length > 0) ||
+    (formData.profiles && formData.profiles.length > 0) ||
+    (formData.references && formData.references.trim().length > 0)
+  );
+
+  const renderEmptyPage2Prompt = () => {
+    if (hasPage2Content) return null;
+    return (
+      <div style={{
+        padding: '28px 20px',
+        margin: '20px 0',
+        border: '2px dashed #cbd5e1',
+        borderRadius: '8px',
+        backgroundColor: '#f8fafc',
+        textAlign: 'center',
+        color: '#64748b'
+      }}>
+        <div style={{ fontSize: '11pt', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
+          📄 Page 2 Added
+        </div>
+        <p style={{ fontSize: '8.5pt', color: '#64748b', margin: 0, lineHeight: 1.5 }}>
+          Add your Certifications, Awards, Languages, Volunteer Work, or References in the editor on the left to populate this page.
+        </p>
+      </div>
+    );
+  };
+
   const renderPageBreak = () => (
     <div className={styles.pageBreakVisualIndicator}>
       <hr className={styles.pageBreakLine} />
@@ -670,6 +708,7 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
               {renderInterests('underline')}
               {renderProfiles('underline')}
               {renderReferences('underline')}
+              {renderEmptyPage2Prompt()}
             </div>
           </>
         )}
@@ -747,6 +786,7 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
                 {renderPublications('underline')}
                 {renderVolunteer('underline')}
                 {renderReferences('underline')}
+                {renderEmptyPage2Prompt()}
               </div>
             </div>
           </>
@@ -821,6 +861,7 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
                   {renderCertifications('underline')}
                   {renderVolunteer('underline')}
                   {renderReferences('underline')}
+                  {renderEmptyPage2Prompt()}
                 </div>
                 <div>
                   {renderAwards('underline')}
@@ -895,6 +936,7 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
               {renderInterests('underline')}
               {renderProfiles('underline')}
               {renderReferences('underline')}
+              {renderEmptyPage2Prompt()}
             </div>
           </>
         )}
