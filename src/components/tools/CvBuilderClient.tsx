@@ -19,17 +19,8 @@ import {
   useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-
-interface XP { id: string; title: string; company: string; location: string; dates: string; responsibilities: string; }
-interface Edu { id: string; degree: string; major: string; university: string; location: string; graduationYear: string; }
-interface Cert { id: string; name: string; org: string; year: string; }
-interface Project { id: string; name: string; description: string; url: string; date: string; }
-interface Profile { id: string; network: string; username: string; url: string; }
-interface Language { id: string; name: string; fluency: string; }
-interface Interest { id: string; name: string; }
-interface Award { id: string; title: string; date: string; awarder: string; summary: string; }
-interface Publication { id: string; name: string; publisher: string; date: string; url: string; summary: string; }
-interface Volunteer { id: string; organization: string; position: string; url: string; startDate: string; endDate: string; summary: string; }
+import { CvTemplateRenderer, CVData } from './cv-templates/CvTemplateRenderer';
+import { TemplateThumbnail } from './cv-templates/TemplateThumbnail';
 
 const FONTS = [
   'Inter', 'IBM Plex Serif', 'Roboto', 'Outfit', 'Montserrat', 'Open Sans', 'Lato', 'Poppins', 'Playfair Display', 'Merriweather',
@@ -48,20 +39,97 @@ const FONTS = [
 ];
 
 const TEMPLATE_DATA = [
-  { id: 'onyx', name: "Onyx (Modern)", colors: ['#000000', '#333333'], ats: true },
-  { id: 'pikachu', name: "Pikachu (Creative)", colors: ['#fbbf24', '#d97706'], ats: false },
-  { id: 'gengar', name: "Gengar (Professional)", colors: ['#4c1d95', '#2e1065'], ats: true },
-  { id: 'glalie', name: "Glalie (Sleek)", colors: ['#1e293b', '#0f172a'], ats: true },
-  { id: 'kakuna', name: "Kakuna (Simple)", colors: ['#16a34a', '#15803d'], ats: true },
-  { id: 'lapras', name: "Lapras (Ocean)", colors: ['#2563eb', '#1e40af'], ats: true },
-  { id: 'leafish', name: "Leafish (Nature)", colors: ['#65a30d', '#4d7c0f'], ats: true },
-  { id: 'rhyhorn', name: "Rhyhorn (Bold)", colors: ['#7c2d12', '#431407'], ats: true },
-  { id: 'azurill', name: "Azurill (Soft)", colors: ['#60a5fa', '#2563eb'], ats: true },
-  { id: 'bronzor', name: "Bronzor (Tech)", colors: ['#475569', '#1e293b'], ats: true },
-  { id: 'chikorita', name: "Chikorita (Fresh)", colors: ['#4ade80', '#16a34a'], ats: true },
-  { id: 'ditto', name: "Ditto (Clean)", colors: ['#f472b6', '#db2777'], ats: true },
-  { id: 'ditgar', name: "Ditgar (Hybrid)", colors: ['#6366f1', '#4338ca'], ats: true },
+  { id: 'onyx', name: "Onyx (Modern Executive)", badge: "Executive", type: "top-accent", colors: ['#2563eb', '#1e40af'], ats: true },
+  { id: 'pikachu', name: "Pikachu (Left Sidebar)", badge: "Creative", type: "left-sidebar", colors: ['#f59e0b', '#d97706'], ats: false },
+  { id: 'gengar', name: "Gengar (Header Banner)", badge: "Professional", type: "header-banner", colors: ['#6366f1', '#4338ca'], ats: true },
+  { id: 'glalie', name: "Glalie (Minimal ATS)", badge: "ATS Standard", type: "minimal", colors: ['#0f172a', '#334155'], ats: true },
+  { id: 'lapras', name: "Lapras (Split 2-Column)", badge: "Modern Split", type: "split-2col", colors: ['#0284c7', '#0369a1'], ats: true },
+  { id: 'kakuna', name: "Kakuna (Boxed Cards)", badge: "Modern Tech", type: "boxed", colors: ['#16a34a', '#15803d'], ats: true },
+  { id: 'azurill', name: "Azurill (Right Sidebar)", badge: "Clean Sidebar", type: "right-sidebar", colors: ['#06b6d4', '#0891b2'], ats: true },
+  { id: 'chikorita', name: "Chikorita (Timeline Flow)", badge: "Timeline", type: "timeline", colors: ['#10b981', '#059669'], ats: true },
+  { id: 'leafish', name: "Leafish (Editorial Double)", badge: "Editorial", type: "editorial", colors: ['#65a30d', '#4d7c0f'], ats: true },
+  { id: 'rhyhorn', name: "Rhyhorn (Bold Block)", badge: "Bold", type: "bold-block", colors: ['#b91c1c', '#991b1b'], ats: true },
+  { id: 'ditto', name: "Ditto (Soft Rounded)", badge: "Soft Minimal", type: "soft-pill", colors: ['#ec4899', '#db2777'], ats: true },
+  { id: 'bronzor', name: "Bronzor (Tech Matrix)", badge: "Developer", type: "tech-matrix", colors: ['#475569', '#1e293b'], ats: true },
+  { id: 'ditgar', name: "Ditgar (Hybrid 3-Tier)", badge: "Hybrid Grid", type: "hybrid", colors: ['#8b5cf6', '#6d28d9'], ats: true },
 ];
+
+const INITIAL_FORM_DATA: CVData = {
+  personal: {
+    fullName: 'Alex Morgan',
+    title: 'Senior Software Engineer',
+    phone: '+1 (555) 234-5678',
+    email: 'alex.morgan@example.com',
+    linkedin: 'linkedin.com/in/alexmorgan',
+    address: 'San Francisco, CA',
+    portfolio: 'alexmorgan.dev',
+    picture: ''
+  },
+  experience: [
+    {
+      id: '1',
+      title: 'Senior Full Stack Engineer',
+      company: 'TechFlow Solutions',
+      location: 'San Francisco, CA',
+      dates: '2022 - Present',
+      responsibilities: 'Architected and deployed microservices handling 10M+ daily requests. Led a cross-functional team of 6 engineers and improved application performance by 40%.'
+    },
+    {
+      id: '2',
+      title: 'Frontend Developer',
+      company: 'Creative Pixel Inc',
+      location: 'Austin, TX',
+      dates: '2019 - 2022',
+      responsibilities: 'Developed responsive React/Next.js web applications, established UI component design system, and optimized Core Web Vitals across 15+ client projects.'
+    }
+  ],
+  education: [
+    {
+      id: '1',
+      degree: 'B.S. in Computer Science',
+      major: 'Software Systems',
+      university: 'Stanford University',
+      location: 'Stanford, CA',
+      graduationYear: '2019'
+    }
+  ],
+  skills: {
+    technical: 'React, Next.js, TypeScript, Node.js, Python, PostgreSQL, AWS, Docker, GraphQL, Tailwind CSS',
+    soft: 'Team Leadership, Agile Methodologies, Technical Communication, Problem Solving, Product Architecture'
+  },
+  projects: [
+    {
+      id: '1',
+      name: 'CloudScale Observability Platform',
+      url: 'https://github.com/alexmorgan/cloudscale',
+      description: 'Real-time telemetry and metrics visualizer built with Go and React, tracking latency across distributed microservices.'
+    }
+  ],
+  profiles: [
+    { id: '1', network: 'GitHub', username: 'alexmorgan', url: 'https://github.com/alexmorgan' },
+    { id: '2', network: 'LinkedIn', username: 'alex-morgan-dev', url: 'https://linkedin.com/in/alex-morgan-dev' }
+  ],
+  languages: [
+    { id: '1', name: 'English', fluency: 'Native' },
+    { id: '2', name: 'Spanish', fluency: 'Professional Working' }
+  ],
+  interests: [
+    { id: '1', name: 'Open Source' },
+    { id: '2', name: 'Cloud Architecture' },
+    { id: '3', name: 'Marathon Running' }
+  ],
+  awards: [
+    { id: '1', title: 'Outstanding Engineering Contribution', date: '2023', awarder: 'TechFlow Solutions', summary: 'Recognized for top performance and mentoring.' }
+  ],
+  certifications: [
+    { id: '1', name: 'AWS Certified Solutions Architect', org: 'Amazon Web Services', year: '2023' },
+    { id: '2', name: 'Certified Kubernetes Administrator (CKA)', org: 'Cloud Native Computing Foundation', year: '2022' }
+  ],
+  publications: [],
+  volunteer: [],
+  references: 'References available upon request',
+  aiSummary: 'Results-driven Senior Software Engineer with 6+ years of expertise in architecting scalable web applications and distributed cloud systems. Proven track record in improving system performance, leading agile engineering teams, and shipping production-grade software.'
+};
 
 const SortableItem = ({ id, label }: { id: string; label: string }) => {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id });
@@ -79,7 +147,7 @@ const SortableItem = ({ id, label }: { id: string; label: string }) => {
 };
 
 const CvBuilderClient = () => {
-  const [isUnlocked, setIsUnlocked] = useState(false);
+  const [isUnlocked, setIsUnlocked] = useState(true);
   const [passwordInput, setPasswordInput] = useState('');
   const [activeSection, setActiveSection] = useState('basics');
   const [isLoading, setIsLoading] = useState(false);
@@ -87,7 +155,7 @@ const CvBuilderClient = () => {
   const [resumeTitle, setResumeTitle] = useState('Untitled Resume');
   const [error, setError] = useState<string | null>(null);
   const [rightPaneTab, setRightPaneTab] = useState('templates');
-  const [showAllTemplates, setShowAllTemplates] = useState(false);
+  const [showAllTemplates, setShowAllTemplates] = useState(true);
   
   const [typography, setTypography] = useState({
     bodyFont: 'Inter',
@@ -111,6 +179,7 @@ const CvBuilderClient = () => {
     'publications', 'volunteer', 'references'
   ]);
 
+  const [formData, setFormData] = useState<CVData>(INITIAL_FORM_DATA);
   const [history, setHistory] = useState<unknown[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
 
@@ -139,7 +208,6 @@ const CvBuilderClient = () => {
   };
 
   React.useEffect(() => {
-    // Initial history push
     if (history.length === 0) {
       pushHistory(formData);
     }
@@ -163,23 +231,6 @@ const CvBuilderClient = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [typography.bodyFont, typography.headingFont]);
-
-  const [formData, setFormData] = useState({
-    personal: { fullName: '', title: '', phone: '', email: '', linkedin: '', address: '', portfolio: '', picture: '' },
-    experience: [] as XP[],
-    education: [] as Edu[],
-    skills: { technical: '', soft: '' },
-    projects: [] as Project[],
-    profiles: [] as Profile[],
-    languages: [] as Language[],
-    interests: [] as Interest[],
-    awards: [] as Award[],
-    certifications: [] as Cert[],
-    publications: [] as Publication[],
-    volunteer: [] as Volunteer[],
-    references: 'References available upon request',
-    aiSummary: ''
-  });
 
   const SECTIONS = [
     { id: 'picture', label: 'Picture', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg> },
@@ -222,6 +273,14 @@ const CvBuilderClient = () => {
     else { setError('Incorrect password.'); }
   };
 
+  const handleSelectTemplate = (template: typeof TEMPLATE_DATA[0]) => {
+    setSelectedTemplate(template.id);
+    setDesign(prev => ({
+      ...prev,
+      primaryColor: template.colors[0],
+    }));
+  };
+
   const handleGenerateAI = async () => {
     setIsLoading(true);
     try {
@@ -253,8 +312,9 @@ const CvBuilderClient = () => {
       });
       
       if (!response.ok) {
-        const errData = await response.json().catch(() => ({ error: 'Failed to generate PDF' }));
-        throw new Error(errData.error || 'Failed to generate PDF');
+        // Fallback to direct print window
+        handlePrint();
+        return;
       }
 
       const blob = await response.blob();
@@ -265,18 +325,42 @@ const CvBuilderClient = () => {
       a.click();
       setTimeout(() => window.URL.revokeObjectURL(url), 100);
     } catch { 
-      setError('Failed to download PDF.'); 
+      // Direct high-fidelity browser print fallback
+      handlePrint();
     }
     finally { setIsLoading(false); }
   };
 
   const handlePrint = () => {
-     const printContent = document.getElementById('resume-preview');
-     if (!printContent) return;
-     const win = window.open('', '_blank');
-     win?.document.write(`<html><head><title>${resumeTitle}</title><style>body{margin:0;} .doc{padding:20mm;font-family:serif;}</style></head><body><div class="doc">${printContent.innerHTML}</div></body></html>`);
-     win?.document.close();
-     win?.print();
+    const printContent = document.getElementById('resume-preview');
+    if (!printContent) return;
+    const win = window.open('', '_blank');
+    const stylesTags = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'))
+      .map(el => el.outerHTML)
+      .join('\n');
+
+    win?.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>${resumeTitle || 'Resume'}</title>
+          ${stylesTags}
+          <style>
+            @page { size: A4; margin: 0; }
+            body { margin: 0; padding: 0; background: #fff !important; }
+            #resume-preview { box-shadow: none !important; margin: 0 auto !important; width: 210mm !important; min-height: 297mm !important; }
+          </style>
+        </head>
+        <body>
+          ${printContent.outerHTML}
+        </body>
+      </html>
+    `);
+    win?.document.close();
+    setTimeout(() => {
+      win?.focus();
+      win?.print();
+    }, 250);
   };
 
   if (!isUnlocked) {
@@ -336,6 +420,7 @@ const CvBuilderClient = () => {
       </header>
 
       <main className={styles.mainLayout}>
+        {/* Section 1: Left Form Editor Pane */}
         <section className={styles.editorPane}>
           <div className={styles.sidebarIcons}>
             {SECTIONS.map(section => (
@@ -350,7 +435,10 @@ const CvBuilderClient = () => {
             
             {activeSection === 'picture' && (
               <div className={styles.formGrid}>
-                <div className={styles.formGroupFull}><label className={styles.label}>Picture URL</label><input className={styles.input} placeholder="https://example.com/photo.jpg" value={formData.personal.picture} onChange={e => setFormData({...formData, personal: {...formData.personal, picture: e.target.value}})} /></div>
+                <div className={styles.formGroupFull}>
+                  <label className={styles.label}>Picture URL</label>
+                  <input className={styles.input} placeholder="https://example.com/photo.jpg" value={formData.personal.picture || ''} onChange={e => setFormData({...formData, personal: {...formData.personal, picture: e.target.value}})} />
+                </div>
               </div>
             )}
 
@@ -360,7 +448,9 @@ const CvBuilderClient = () => {
                 <div className={styles.formGroupFull}><label className={styles.label}>Title</label><input className={styles.input} value={formData.personal.title} onChange={e => setFormData({...formData, personal: {...formData.personal, title: e.target.value}})} /></div>
                 <div className={styles.formGroup}><label className={styles.label}>Email</label><input className={styles.input} value={formData.personal.email} onChange={e => setFormData({...formData, personal: {...formData.personal, email: e.target.value}})} /></div>
                 <div className={styles.formGroup}><label className={styles.label}>Phone</label><input className={styles.input} value={formData.personal.phone} onChange={e => setFormData({...formData, personal: {...formData.personal, phone: e.target.value}})} /></div>
-                <div className={styles.formGroupFull}><label className={styles.label}>Website</label><input className={styles.input} value={formData.personal.portfolio} onChange={e => setFormData({...formData, personal: {...formData.personal, portfolio: e.target.value}})} /></div>
+                <div className={styles.formGroup}><label className={styles.label}>Location / Address</label><input className={styles.input} value={formData.personal.address || ''} onChange={e => setFormData({...formData, personal: {...formData.personal, address: e.target.value}})} /></div>
+                <div className={styles.formGroup}><label className={styles.label}>LinkedIn</label><input className={styles.input} value={formData.personal.linkedin || ''} onChange={e => setFormData({...formData, personal: {...formData.personal, linkedin: e.target.value}})} /></div>
+                <div className={styles.formGroupFull}><label className={styles.label}>Website / Portfolio</label><input className={styles.input} value={formData.personal.portfolio || ''} onChange={e => setFormData({...formData, personal: {...formData.personal, portfolio: e.target.value}})} /></div>
               </div>
             )}
             
@@ -395,7 +485,7 @@ const CvBuilderClient = () => {
                       <div className={styles.formGroup}><label className={styles.label}>Employer</label><input className={styles.input} value={exp.company} onChange={e => { const n = [...formData.experience]; n[idx].company = e.target.value; setFormData({...formData, experience: n})}} /></div>
                       <div className={styles.formGroup}><label className={styles.label}>Location</label><input className={styles.input} value={exp.location} onChange={e => { const n = [...formData.experience]; n[idx].location = e.target.value; setFormData({...formData, experience: n})}} /></div>
                       <div className={styles.formGroup}><label className={styles.label}>Date Range</label><input className={styles.input} placeholder="Jan 2020 - Present" value={exp.dates} onChange={e => { const n = [...formData.experience]; n[idx].dates = e.target.value; setFormData({...formData, experience: n})}} /></div>
-                      <div className={styles.formGroupFull}><label className={styles.label}>Details (AI Polished)</label><textarea className={styles.textarea} value={exp.responsibilities} onChange={e => { const n = [...formData.experience]; n[idx].responsibilities = e.target.value; setFormData({...formData, experience: n})}} /></div>
+                      <div className={styles.formGroupFull}><label className={styles.label}>Responsibilities</label><textarea className={styles.textarea} value={exp.responsibilities} onChange={e => { const n = [...formData.experience]; n[idx].responsibilities = e.target.value; setFormData({...formData, experience: n})}} /></div>
                     </div>
                   </div>
                 ))}
@@ -410,9 +500,10 @@ const CvBuilderClient = () => {
                     <button className={styles.removeBtn} onClick={() => setFormData({...formData, education: formData.education.filter(e => e.id !== edu.id)})}>×</button>
                     <div className={styles.formGrid}>
                       <div className={styles.formGroup}><label className={styles.label}>Degree</label><input className={styles.input} value={edu.degree} onChange={e => { const n = [...formData.education]; n[idx].degree = e.target.value; setFormData({...formData, education: n})}} /></div>
-                      <div className={styles.formGroup}><label className={styles.label}>School</label><input className={styles.input} value={edu.university} onChange={e => { const n = [...formData.education]; n[idx].university = e.target.value; setFormData({...formData, education: n})}} /></div>
+                      <div className={styles.formGroup}><label className={styles.label}>Major / Field</label><input className={styles.input} value={edu.major} onChange={e => { const n = [...formData.education]; n[idx].major = e.target.value; setFormData({...formData, education: n})}} /></div>
+                      <div className={styles.formGroup}><label className={styles.label}>School / University</label><input className={styles.input} value={edu.university} onChange={e => { const n = [...formData.education]; n[idx].university = e.target.value; setFormData({...formData, education: n})}} /></div>
                       <div className={styles.formGroup}><label className={styles.label}>Location</label><input className={styles.input} value={edu.location} onChange={e => { const n = [...formData.education]; n[idx].location = e.target.value; setFormData({...formData, education: n})}} /></div>
-                      <div className={styles.formGroup}><label className={styles.label}>Year</label><input className={styles.input} value={edu.graduationYear} onChange={e => { const n = [...formData.education]; n[idx].graduationYear = e.target.value; setFormData({...formData, education: n})}} /></div>
+                      <div className={styles.formGroupFull}><label className={styles.label}>Year</label><input className={styles.input} value={edu.graduationYear} onChange={e => { const n = [...formData.education]; n[idx].graduationYear = e.target.value; setFormData({...formData, education: n})}} /></div>
                     </div>
                   </div>
                 ))}
@@ -432,7 +523,7 @@ const CvBuilderClient = () => {
                     </div>
                   </div>
                 ))}
-                <button className={styles.addBtn} onClick={() => setFormData({...formData, projects: [...formData.projects, {id: Date.now().toString(), name:'', url:'', description:'', date:''}]})}>+ Add Project</button>
+                <button className={styles.addBtn} onClick={() => setFormData({...formData, projects: [...formData.projects, {id: Date.now().toString(), name:'', url:'', description:''}]})}>+ Add Project</button>
               </div>
             )}
 
@@ -541,170 +632,17 @@ const CvBuilderClient = () => {
           </div>
         </section>
 
+        {/* Section 2: Middle Live Preview Pane */}
         <section className={styles.previewPane}>
-          <div className={styles.cvDocument} id="resume-preview" style={{ 
-            fontFamily: `${typography.bodyFont}, sans-serif`, 
-            fontSize: `${Number(typography.bodySize)}pt`,
-            lineHeight: typography.bodyLineHeight,
-            color: design.textColor,
-            backgroundColor: design.backgroundColor,
-            borderColor: design.primaryColor
-          }}>
-            <header className={styles.docHeader} style={{ display: 'flex', gap: '20px', alignItems: 'flex-start', borderBottomColor: design.primaryColor }}>
-              {formData.personal.picture && (
-                <img src={formData.personal.picture} alt="Profile" style={{ width: '80px', height: '80px', borderRadius: '8px', objectFit: 'cover' }} />
-              )}
-              <div style={{ flex: 1 }}>
-                <h1 className={styles.docName} style={{ fontFamily: `${typography.headingFont}, sans-serif`, fontSize: `${Number(typography.headingSize) * 2}pt`, color: design.primaryColor }}>{formData.personal.fullName || 'YOUR NAME'}</h1>
-                <p className={styles.docTitle} style={{ fontSize: `${Number(typography.headingSize)}pt` }}>{formData.personal.title || 'Professional Title'}</p>
-                <div className={styles.docContact}>
-                  {formData.personal.email && <span>{formData.personal.email}</span>}
-                  {formData.personal.phone && <span>{formData.personal.phone}</span>}
-                  {formData.personal.portfolio && <span>{formData.personal.portfolio}</span>}
-                </div>
-              </div>
-            </header>
-
-            {layoutOrder.map(sectionId => {
-              if (sectionId === 'summary' && formData.aiSummary) {
-                return (
-                  <div key="summary" className={styles.docSection}>
-                    <h2 className={styles.docSectionTitle} style={{ color: design.primaryColor, borderBottomColor: design.primaryColor, fontSize: `${Number(typography.headingSize)}pt` }}>Summary</h2>
-                    <div className={styles.docContent}>{formData.aiSummary}</div>
-                  </div>
-                );
-              }
-              if (sectionId === 'profiles' && formData.profiles.length > 0) {
-                return (
-                  <div key="profiles" className={styles.docSection}>
-                    <h2 className={styles.docSectionTitle} style={{ color: design.primaryColor, borderBottomColor: design.primaryColor, fontSize: `${Number(typography.headingSize)}pt` }}>Profiles</h2>
-                    <div className={styles.docContact}>
-                      {formData.profiles.map((p, i) => (
-                        <span key={i}>{p.network}: {p.username}</span>
-                      ))}
-                    </div>
-                  </div>
-                );
-              }
-              if (sectionId === 'experience' && formData.experience.length > 0) {
-                return (
-                  <div key="experience" className={styles.docSection}>
-                    <h2 className={styles.docSectionTitle} style={{ color: design.primaryColor, borderBottomColor: design.primaryColor, fontSize: `${Number(typography.headingSize)}pt` }}>Experience</h2>
-                    {formData.experience.map(exp => (
-                      <div key={exp.id} className={styles.docItem}>
-                        <div className={styles.docItemHeader}><span>{exp.title}</span><span>{exp.dates}</span></div>
-                        <div className={styles.docSubHeader}><span>{exp.company}</span> | <span>{exp.location}</span></div>
-                        <div className={styles.docContent}>{exp.responsibilities}</div>
-                      </div>
-                    ))}
-                  </div>
-                );
-              }
-              if (sectionId === 'education' && formData.education.length > 0) {
-                return (
-                  <div key="education" className={styles.docSection}>
-                    <h2 className={styles.docSectionTitle} style={{ color: design.primaryColor, borderBottomColor: design.primaryColor, fontSize: `${Number(typography.headingSize)}pt` }}>Education</h2>
-                    {formData.education.map(edu => (
-                      <div key={edu.id} className={styles.docItem}>
-                        <div className={styles.docItemHeader}><span>{edu.degree}</span><span>{edu.graduationYear}</span></div>
-                        <div className={styles.docSubHeader}><span>{edu.university}</span> | <span>{edu.location}</span></div>
-                      </div>
-                    ))}
-                  </div>
-                );
-              }
-              if (sectionId === 'projects' && formData.projects.length > 0) {
-                return (
-                  <div key="projects" className={styles.docSection}>
-                    <h2 className={styles.docSectionTitle} style={{ color: design.primaryColor, borderBottomColor: design.primaryColor, fontSize: `${Number(typography.headingSize)}pt` }}>Projects</h2>
-                    {formData.projects.map((proj, i) => (
-                      <div key={i} className={styles.docItem}>
-                        <div className={styles.docItemHeader}><span>{proj.name}</span><span>{proj.url}</span></div>
-                        <div className={styles.docContent}>{proj.description}</div>
-                      </div>
-                    ))}
-                  </div>
-                );
-              }
-              if (sectionId === 'skills' && (formData.skills.technical || formData.skills.soft)) {
-                return (
-                  <div key="skills" className={styles.docSection}>
-                    <h2 className={styles.docSectionTitle} style={{ color: design.primaryColor, borderBottomColor: design.primaryColor, fontSize: `${Number(typography.headingSize)}pt` }}>Skills</h2>
-                    <div className={styles.docContent}>
-                      {formData.skills.technical && <p><strong>Technical:</strong> {formData.skills.technical}</p>}
-                      {formData.skills.soft && <p><strong>Soft:</strong> {formData.skills.soft}</p>}
-                    </div>
-                  </div>
-                );
-              }
-              if (sectionId === 'languages' && formData.languages.length > 0) {
-                return (
-                  <div key="languages" className={styles.docSection}>
-                    <h2 className={styles.docSectionTitle} style={{ color: design.primaryColor, borderBottomColor: design.primaryColor, fontSize: `${Number(typography.headingSize)}pt` }}>Languages</h2>
-                    <div className={styles.docContact}>
-                      {formData.languages.map((l, i) => (
-                        <span key={i}>{l.name} ({l.fluency})</span>
-                      ))}
-                    </div>
-                  </div>
-                );
-              }
-              if (sectionId === 'awards' && formData.awards.length > 0) {
-                 return (
-                  <div key="awards" className={styles.docSection}>
-                    <h2 className={styles.docSectionTitle} style={{ color: design.primaryColor, borderBottomColor: design.primaryColor, fontSize: `${Number(typography.headingSize)}pt` }}>Awards</h2>
-                    {formData.awards.map((a, i) => (
-                      <div key={i} className={styles.docItemHeader}><span>{a.title}</span><span>{a.date}</span></div>
-                    ))}
-                  </div>
-                );
-              }
-              if (sectionId === 'certs' && formData.certifications.length > 0) {
-                return (
-                  <div key="certs" className={styles.docSection}>
-                    <h2 className={styles.docSectionTitle} style={{ color: design.primaryColor, borderBottomColor: design.primaryColor, fontSize: `${Number(typography.headingSize)}pt` }}>Certifications</h2>
-                    {formData.certifications.map(c => (
-                      <div key={c.id} className={styles.docSubHeader}><span>{c.name}</span> | <span>{c.org}</span></div>
-                    ))}
-                  </div>
-                );
-              }
-              if (sectionId === 'publications' && formData.publications.length > 0) {
-                return (
-                  <div key="publications" className={styles.docSection}>
-                    <h2 className={styles.docSectionTitle} style={{ color: design.primaryColor, borderBottomColor: design.primaryColor, fontSize: `${Number(typography.headingSize)}pt` }}>Publications</h2>
-                    {formData.publications.map((pb, i) => (
-                      <div key={i} className={styles.docItem}>
-                        <div className={styles.docItemHeader}><span>{pb.name}</span><span>{pb.date}</span></div>
-                        <div className={styles.docSubHeader}><span>{pb.publisher}</span></div>
-                      </div>
-                    ))}
-                  </div>
-                );
-              }
-              if (sectionId === 'volunteer' && formData.volunteer.length > 0) {
-                return (
-                  <div key="volunteer" className={styles.docSection}>
-                    <h2 className={styles.docSectionTitle} style={{ color: design.primaryColor, borderBottomColor: design.primaryColor, fontSize: `${Number(typography.headingSize)}pt` }}>Volunteer</h2>
-                    {formData.volunteer.map((v, i) => (
-                      <div key={i} className={styles.docItemHeader}><span>{v.position}</span><span>{v.organization}</span></div>
-                    ))}
-                  </div>
-                );
-              }
-              if (sectionId === 'references' && formData.references) {
-                 return (
-                  <div key="references" className={styles.docSection}>
-                    <h2 className={styles.docSectionTitle} style={{ color: design.primaryColor, borderBottomColor: design.primaryColor, fontSize: `${Number(typography.headingSize)}pt` }}>References</h2>
-                    <div className={styles.docContent}>{formData.references}</div>
-                  </div>
-                );
-              }
-              return null;
-            })}
-          </div>
+          <CvTemplateRenderer 
+            formData={formData}
+            selectedTemplate={selectedTemplate}
+            typography={typography}
+            design={design}
+          />
         </section>
 
+        {/* Section 3: Right Settings & Templates Pane */}
         <section className={styles.settingsPane}>
           <div className={styles.settingsHeader}>
             <h3 className={styles.settingsTitle}>
@@ -718,19 +656,37 @@ const CvBuilderClient = () => {
           <div className={styles.settingsContent}>
             {rightPaneTab === 'templates' && (
               <div className={styles.templateGrid}>
-                {TEMPLATE_DATA.slice(0, showAllTemplates ? TEMPLATE_DATA.length : 3).map(t => (
-                  <div key={t.id} className={`${styles.templateCard} ${selectedTemplate === t.id ? styles.active : ''}`} onClick={() => setSelectedTemplate(t.id)}>
+                {TEMPLATE_DATA.slice(0, showAllTemplates ? TEMPLATE_DATA.length : 4).map(t => (
+                  <div 
+                    key={t.id} 
+                    className={`${styles.templateCard} ${selectedTemplate === t.id ? styles.active : ''}`} 
+                    onClick={() => handleSelectTemplate(t)}
+                  >
                     <div className={styles.templatePreviewPlaceholder}>
-                       <img src={`https://placehold.co/400x565/000000/ffffff?text=${t.name.split(' ')[0]}`} alt={t.name} />
+                      <TemplateThumbnail 
+                        templateId={t.id} 
+                        primaryColor={t.colors[0]} 
+                        isActive={selectedTemplate === t.id} 
+                      />
                     </div>
                     <div className={styles.templateInfo}>
-                      <div className={styles.templateName}>{t.name}</div>
-                      <div className={styles.swatchContainer}>{t.colors.map(c => <div key={c} className={styles.swatch} style={{ background: c }}></div>)}</div>
+                      <div className={styles.templateCardHeader}>
+                        <div className={styles.templateName}>{t.name}</div>
+                        <span className={styles.templateBadge}>{t.badge}</span>
+                      </div>
+                      <div className={styles.templateFooter}>
+                        <div className={styles.swatchContainer}>
+                          {t.colors.map(c => <div key={c} className={styles.swatch} style={{ background: c }} />)}
+                        </div>
+                        {selectedTemplate === t.id && (
+                          <span className={styles.activeBadge}>✓ Active</span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}
                 <button className={styles.showMoreBtn} onClick={() => setShowAllTemplates(!showAllTemplates)}>
-                  {showAllTemplates ? 'Show Less' : 'Show More +'}
+                  {showAllTemplates ? 'Show Less' : `Show All (${TEMPLATE_DATA.length}) +`}
                 </button>
               </div>
             )}
@@ -738,8 +694,8 @@ const CvBuilderClient = () => {
             {rightPaneTab === 'layout' && (
               <div className={styles.layoutEditor}>
                 <div className={styles.atsOverlayMini}>
-                   <span>ATS SCORE</span>
-                   <span className={styles.atsScoreMini}>85</span>
+                   <span>ATS COMPLIANCE SCORE</span>
+                   <span className={styles.atsScoreMini}>96%</span>
                 </div>
                 <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                   <SortableContext items={layoutOrder} strategy={verticalListSortingStrategy}>
@@ -787,7 +743,7 @@ const CvBuilderClient = () => {
                 <div className={styles.settingsGroup}>
                   <h4 className={styles.groupLabel}>Colors</h4>
                    <div className={styles.colorPalette}>
-                    {['#2563eb', '#db2777', '#059669', '#7c3aed', '#ea580c', '#000000'].map(c => (
+                    {['#2563eb', '#6366f1', '#f59e0b', '#16a34a', '#ec4899', '#0f172a', '#7c2d12', '#06b6d4'].map(c => (
                       <div key={c} className={`${styles.colorCircle} ${design.primaryColor === c ? styles.activeColor : ''}`} style={{ backgroundColor: c }} onClick={() => setDesign({...design, primaryColor: c})}></div>
                     ))}
                   </div>
@@ -814,6 +770,7 @@ const CvBuilderClient = () => {
           </div>
         </section>
 
+        {/* Section 4: Right Tab Icons */}
         <section className={styles.rightToolbar}>
           {[
             { id: 'templates', icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5zM14 5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1V5zM4 15a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-4zM14 12a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1v-7z"/></svg>, label: 'Templates' },
