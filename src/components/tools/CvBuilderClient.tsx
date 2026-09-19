@@ -415,10 +415,10 @@ const CvBuilderClient = () => {
     setError(null);
     abortDownloadRef.current = false;
 
-    const setProgressAsync = async (percent: number, status: string, delayMs = 60) => {
+    const setProgressAsync = async (percent: number, status: string, delayMs = 70) => {
       if (abortDownloadRef.current) return;
-      setDownloadProgress(prev => {
-        if (abortDownloadRef.current || !prev.isOpen) {
+      setDownloadProgress(() => {
+        if (abortDownloadRef.current) {
           return { isOpen: false, percent: 0, status: '' };
         }
         return { isOpen: true, percent, status };
