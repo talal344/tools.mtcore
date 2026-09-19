@@ -378,15 +378,24 @@ const CvBuilderClient = () => {
   const handleDownloadPDF = async () => {
     setIsLoading(true);
     setError(null);
-    setDownloadProgress({ isOpen: true, percent: 15, status: 'Initializing PDF engine...' });
+
+    const setProgressAsync = async (percent: number, status: string, delayMs = 90) => {
+      setDownloadProgress({ isOpen: true, percent, status });
+      await new Promise(resolve => setTimeout(resolve, delayMs));
+    };
+
     try {
       const resumeEl = document.getElementById('resume-preview');
       if (!resumeEl) {
         throw new Error('Resume element not found');
       }
 
+      await setProgressAsync(12, 'Initializing high-resolution PDF engine...', 120);
+
       const html2canvas = (await import('html2canvas')).default;
       const { jsPDF } = await import('jspdf');
+
+      await setProgressAsync(25, 'Preparing document pages...', 100);
 
       const pageElements = resumeEl.querySelectorAll<HTMLElement>('.resume-page');
       const pdf = new jsPDF({
@@ -397,17 +406,21 @@ const CvBuilderClient = () => {
       });
 
       if (pageElements && pageElements.length > 0) {
-        for (let i = 0; i < pageElements.length; i++) {
-          const stepPercent = Math.round(25 + ((i + 1) / pageElements.length) * 60);
-          setDownloadProgress({
-            isOpen: true,
-            percent: stepPercent,
-            status: `Rendering Page ${i + 1} of ${pageElements.length}...`,
-          });
+        const totalPages = pageElements.length;
+        for (let i = 0; i < totalPages; i++) {
+          const startPercent = Math.round(25 + (i / totalPages) * 55);
+          const endPercent = Math.round(25 + ((i + 1) / totalPages) * 55);
+
+          await setProgressAsync(
+            startPercent + 8,
+            `Capturing Page ${i + 1} of ${totalPages} in vector quality...`,
+            120
+          );
 
           if (i > 0) {
             pdf.addPage();
           }
+
           const pageCanvas = await html2canvas(pageElements[i], {
             scale: 2.5,
             useCORS: true,
@@ -416,9 +429,15 @@ const CvBuilderClient = () => {
           });
           const imgData = pageCanvas.toDataURL('image/png', 1.0);
           pdf.addImage(imgData, 'PNG', 0, 0, 210, 297);
+
+          await setProgressAsync(
+            endPercent,
+            `Page ${i + 1} of ${totalPages} rendered successfully`,
+            100
+          );
         }
       } else {
-        setDownloadProgress({ isOpen: true, percent: 60, status: 'Rendering document...' });
+        await setProgressAsync(50, 'Rendering document...', 120);
         const canvas = await html2canvas(resumeEl, {
           scale: 2.5,
           useCORS: true,
@@ -427,18 +446,19 @@ const CvBuilderClient = () => {
         });
         const imgData = canvas.toDataURL('image/png', 1.0);
         pdf.addImage(imgData, 'PNG', 0, 0, 210, 297);
+        await setProgressAsync(80, 'Document captured successfully', 100);
       }
 
-      setDownloadProgress({ isOpen: true, percent: 95, status: 'Compiling PDF file...' });
+      await setProgressAsync(92, 'Compiling and saving PDF file...', 150);
       const filename = `${(formData.personal?.fullName || resumeTitle || 'Resume').trim().replace(/\s+/g, '_')}_CV.pdf`;
       pdf.save(filename);
 
-      setDownloadProgress({ isOpen: true, percent: 100, status: 'Download Complete!' });
+      await setProgressAsync(100, 'Download Complete!', 400);
       setTimeout(() => {
         setDownloadProgress({ isOpen: false, percent: 0, status: '' });
         setSuccessMsg('✅ Resume downloaded successfully!');
         setTimeout(() => setSuccessMsg(null), 4000);
-      }, 700);
+      }, 600);
     } catch (err) { 
       console.error('PDF export error, falling back to print dialog:', err);
       setDownloadProgress({ isOpen: false, percent: 0, status: '' });

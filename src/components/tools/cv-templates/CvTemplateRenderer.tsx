@@ -129,25 +129,21 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
     .map(s => s.trim())
     .filter(Boolean);
 
-  // Exact capacity measurement: Page 1 holds up to 1000px of content safely.
-  const totalContentHeight =
-    130 + // Header
-    (formData.aiSummary ? 85 : 0) +
-    (formData.experience?.length || 0) * 85 +
-    (formData.education?.length || 0) * 55 +
-    (formData.projects?.length || 0) * 65 +
-    (techSkills.length > 0 || softSkills.length > 0 ? 80 : 0) +
-    (formData.certifications?.length || 0) * 45 +
-    (formData.awards?.length || 0) * 55 +
-    (formData.publications?.length || 0) * 55 +
-    (formData.volunteer?.length || 0) * 65 +
-    (formData.languages?.length || 0) * 30 +
-    (formData.interests?.length || 0) * 25 +
-    (formData.profiles?.length || 0) * 25 +
-    (formData.references?.trim() ? 45 : 0);
+  // Check whether extra secondary sections exist that warrant rendering on Page 2
+  const hasExtraSections = Boolean(
+    (formData.awards && formData.awards.length > 0) ||
+    (formData.certifications && formData.certifications.length > 0) ||
+    (formData.publications && formData.publications.length > 0) ||
+    (formData.volunteer && formData.volunteer.length > 0) ||
+    (formData.references && formData.references.trim().length > 0) ||
+    (formData.languages && formData.languages.length > 0) ||
+    (formData.interests && formData.interests.length > 0) ||
+    (formData.profiles && formData.profiles.length > 0) ||
+    (formData.experience && formData.experience.length > 2) ||
+    (formData.projects && formData.projects.length > 2)
+  );
 
-  // hasPage2 triggers ONLY IF user adds extra items beyond standard 1-page capacity
-  const hasPage2 = totalContentHeight > 1000;
+  const hasPage2 = hasExtraSections;
 
   const docBaseStyle: React.CSSProperties = {
     fontFamily: `${typography.bodyFont}, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`,
@@ -641,9 +637,9 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
           {renderEducation('underline')}
           {renderProjects('underline')}
           {renderSkills('underline')}
-          {renderCertifications('underline')}
           {!hasPage2 && (
             <>
+              {renderCertifications('underline')}
               {renderAwards('underline')}
               {renderPublications('underline')}
               {renderVolunteer('underline')}
@@ -661,6 +657,7 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
             {renderPageBreak()}
             <div className={`${styles.cvDocument} resume-page`} data-page="2" style={{ ...docBaseStyle, padding: '30px 36px', borderTop: `5px solid ${pColor}` }}>
               {renderPage2Header('line')}
+              {renderCertifications('underline')}
               {renderAwards('underline')}
               {renderPublications('underline')}
               {renderVolunteer('underline')}
@@ -696,9 +693,13 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
               {formData.personal?.linkedin && <div style={{ marginBottom: '5px', fontSize: '8pt', color: '#334155', wordBreak: 'break-all' }}>💼 {formData.personal.linkedin}</div>}
             </div>
             {renderSkills('underline')}
-            {renderLanguages('underline')}
-            {renderInterests('underline')}
-            {renderProfiles('underline')}
+            {!hasPage2 && (
+              <>
+                {renderLanguages('underline')}
+                {renderInterests('underline')}
+                {renderProfiles('underline')}
+              </>
+            )}
           </div>
 
           <div style={{ padding: '30px 24px', boxSizing: 'border-box', backgroundColor: '#ffffff' }}>
@@ -712,9 +713,9 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
             {renderExperience('underline')}
             {renderEducation('underline')}
             {renderProjects('underline')}
-            {renderCertifications('underline')}
             {!hasPage2 && (
               <>
+                {renderCertifications('underline')}
                 {renderAwards('underline')}
                 {renderPublications('underline')}
                 {renderVolunteer('underline')}
@@ -729,9 +730,14 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
           <>
             {renderPageBreak()}
             <div className={`${styles.cvDocument} resume-page`} data-page="2" style={{ ...docBaseStyle, display: 'grid', gridTemplateColumns: '32% 68%' }}>
-              <div style={{ backgroundColor: '#f8fafc', borderRight: '1px solid #e2e8f0', padding: '30px 18px', boxSizing: 'border-box' }} />
+              <div style={{ backgroundColor: '#f8fafc', borderRight: '1px solid #e2e8f0', padding: '30px 18px', boxSizing: 'border-box' }}>
+                {renderLanguages('underline')}
+                {renderInterests('underline')}
+                {renderProfiles('underline')}
+              </div>
               <div style={{ padding: '30px 24px', boxSizing: 'border-box', backgroundColor: '#ffffff' }}>
                 {renderPage2Header('line')}
+                {renderCertifications('underline')}
                 {renderAwards('underline')}
                 {renderPublications('underline')}
                 {renderVolunteer('underline')}
@@ -785,9 +791,9 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
             <div>
               {renderEducation('underline')}
               {renderSkills('underline')}
-              {renderCertifications('underline')}
               {!hasPage2 && (
                 <>
+                  {renderCertifications('underline')}
                   {renderAwards('underline')}
                   {renderPublications('underline')}
                   {renderLanguages('underline')}
@@ -807,6 +813,7 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
               {renderPage2Header('banner')}
               <div style={{ display: 'grid', gridTemplateColumns: '58% 42%', gap: '22px', boxSizing: 'border-box' }}>
                 <div>
+                  {renderCertifications('underline')}
                   {renderVolunteer('underline')}
                   {renderReferences('underline')}
                 </div>
@@ -855,9 +862,9 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
           {renderEducation('underline')}
           {renderProjects('underline')}
           {renderSkills('underline')}
-          {renderCertifications('underline')}
           {!hasPage2 && (
             <>
+              {renderCertifications('underline')}
               {renderAwards('underline')}
               {renderPublications('underline')}
               {renderVolunteer('underline')}
@@ -875,6 +882,7 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
             {renderPageBreak()}
             <div className={`${styles.cvDocument} resume-page`} data-page="2" style={{ ...docBaseStyle, padding: '30px 38px' }}>
               {renderPage2Header('line')}
+              {renderCertifications('underline')}
               {renderAwards('underline')}
               {renderPublications('underline')}
               {renderVolunteer('underline')}
@@ -919,9 +927,9 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
             <div>
               {renderEducation('underline')}
               {renderSkills('underline')}
-              {renderCertifications('underline')}
               {!hasPage2 && (
                 <>
+                  {renderCertifications('underline')}
                   {renderLanguages('underline')}
                   {renderInterests('underline')}
                   {renderProfiles('underline')}
@@ -952,6 +960,7 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
               {renderPage2Header('line')}
               <div style={{ display: 'grid', gridTemplateColumns: '38% 62%', gap: '22px' }}>
                 <div>
+                  {renderCertifications('underline')}
                   {renderLanguages('underline')}
                   {renderInterests('underline')}
                   {renderProfiles('underline')}
@@ -1000,9 +1009,9 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
           {renderEducation('underline', true)}
           {renderProjects('underline', true)}
           {renderSkills('underline')}
-          {renderCertifications('underline')}
           {!hasPage2 && (
             <>
+              {renderCertifications('underline')}
               {renderAwards('underline', true)}
               {renderPublications('underline', true)}
               {renderVolunteer('underline', true)}
@@ -1020,6 +1029,7 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
             {renderPageBreak()}
             <div className={`${styles.cvDocument} resume-page`} data-page="2" style={{ ...docBaseStyle, padding: '28px 34px', backgroundColor: '#fcfcfc' }}>
               {renderPage2Header('line')}
+              {renderCertifications('underline')}
               {renderAwards('underline', true)}
               {renderPublications('underline', true)}
               {renderVolunteer('underline', true)}
@@ -1073,9 +1083,9 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
               {formData.personal?.portfolio && <div style={{ marginBottom: '5px', fontSize: '8pt', color: '#334155', wordBreak: 'break-all' }}>🌐 {formData.personal.portfolio}</div>}
             </div>
             {renderSkills('underline')}
-            {renderCertifications('underline')}
             {!hasPage2 && (
               <>
+                {renderCertifications('underline')}
                 {renderAwards('underline')}
                 {renderPublications('underline')}
                 {renderLanguages('underline')}
@@ -1097,6 +1107,7 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
                 {renderReferences('underline')}
               </div>
               <div style={{ padding: '28px 18px', backgroundColor: '#f8fafc', borderLeft: '1px solid #e2e8f0', boxSizing: 'border-box' }}>
+                {renderCertifications('underline')}
                 {renderAwards('underline')}
                 {renderPublications('underline')}
                 {renderLanguages('underline')}
@@ -1158,9 +1169,9 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
           {renderEducation('underline')}
           {renderProjects('underline')}
           {renderSkills('underline')}
-          {renderCertifications('underline')}
           {!hasPage2 && (
             <>
+              {renderCertifications('underline')}
               {renderAwards('underline')}
               {renderPublications('underline')}
               {renderVolunteer('underline')}
@@ -1178,6 +1189,7 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
             {renderPageBreak()}
             <div className={`${styles.cvDocument} resume-page`} data-page="2" style={{ ...docBaseStyle, padding: '28px 34px' }}>
               {renderPage2Header('line')}
+              {renderCertifications('underline')}
               {renderAwards('underline')}
               {renderPublications('underline')}
               {renderVolunteer('underline')}
@@ -1223,9 +1235,9 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
             {renderEducation('bold')}
             {renderProjects('bold')}
             {renderSkills('bold')}
-            {renderCertifications('bold')}
             {!hasPage2 && (
               <>
+                {renderCertifications('bold')}
                 {renderAwards('bold')}
                 {renderPublications('bold')}
                 {renderVolunteer('bold')}
@@ -1244,6 +1256,7 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
             {renderPageBreak()}
             <div className={`${styles.cvDocument} resume-page`} data-page="2" style={{ ...docBaseStyle, padding: '26px 32px' }}>
               {renderPage2Header('banner')}
+              {renderCertifications('bold')}
               {renderAwards('bold')}
               {renderPublications('bold')}
               {renderVolunteer('bold')}
@@ -1288,9 +1301,9 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
           {renderEducation('pill')}
           {renderProjects('pill')}
           {renderSkills('pill')}
-          {renderCertifications('pill')}
           {!hasPage2 && (
             <>
+              {renderCertifications('pill')}
               {renderAwards('pill')}
               {renderPublications('pill')}
               {renderVolunteer('pill')}
@@ -1308,6 +1321,7 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
             {renderPageBreak()}
             <div className={`${styles.cvDocument} resume-page`} data-page="2" style={{ ...docBaseStyle, padding: '28px 34px' }}>
               {renderPage2Header('pill')}
+              {renderCertifications('pill')}
               {renderAwards('pill')}
               {renderPublications('pill')}
               {renderVolunteer('pill')}
@@ -1351,9 +1365,9 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
           {renderEducation('terminal')}
           {renderProjects('terminal')}
           {renderSkills('terminal')}
-          {renderCertifications('terminal')}
           {!hasPage2 && (
             <>
+              {renderCertifications('terminal')}
               {renderAwards('terminal')}
               {renderPublications('terminal')}
               {renderVolunteer('terminal')}
@@ -1371,6 +1385,7 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
             {renderPageBreak()}
             <div className={`${styles.cvDocument} resume-page`} data-page="2" style={{ ...docBaseStyle, padding: '26px 34px' }}>
               {renderPage2Header('terminal')}
+              {renderCertifications('terminal')}
               {renderAwards('terminal')}
               {renderPublications('terminal')}
               {renderVolunteer('terminal')}
@@ -1417,9 +1432,9 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
           {renderEducation('underline')}
           {renderProjects('underline')}
           {renderSkills('underline')}
-          {renderCertifications('underline')}
           {!hasPage2 && (
             <>
+              {renderCertifications('underline')}
               {renderAwards('underline')}
               {renderPublications('underline')}
               {renderVolunteer('underline')}
@@ -1437,6 +1452,7 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
             {renderPageBreak()}
             <div className={`${styles.cvDocument} resume-page`} data-page="2" style={{ ...docBaseStyle, padding: '28px 36px' }}>
               {renderPage2Header('editorial')}
+              {renderCertifications('underline')}
               {renderAwards('underline')}
               {renderPublications('underline')}
               {renderVolunteer('underline')}
@@ -1481,7 +1497,7 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
           <div>{renderExperience('underline')}</div>
           <div>
             {renderEducation('underline')}
-            {renderCertifications('underline')}
+            {!hasPage2 && renderCertifications('underline')}
           </div>
         </div>
 
@@ -1507,7 +1523,10 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
           <div className={`${styles.cvDocument} resume-page`} data-page="2" style={{ ...docBaseStyle, padding: '28px 32px', borderTop: `5px solid ${pColor}` }}>
             {renderPage2Header('line')}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-              <div>{renderVolunteer('underline')}</div>
+              <div>
+                {renderCertifications('underline')}
+                {renderVolunteer('underline')}
+              </div>
               <div>
                 {renderAwards('underline')}
                 {renderPublications('underline')}
