@@ -1,4 +1,5 @@
 'use client';
+/* eslint-disable @next/next/no-img-element */
 
 import React, { useState } from 'react';
 import styles from './CvBuilderClient.module.css';
@@ -324,6 +325,46 @@ const CvBuilderClient = () => {
     finally { setIsLoading(false); }
   };
 
+  const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 6 * 1024 * 1024) {
+        setError('Image size should be less than 6MB');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const result = event.target?.result as string;
+        const newFormData: CVData = {
+          ...formData,
+          personal: {
+            ...formData.personal,
+            picture: result,
+          },
+        };
+        pushHistory(newFormData);
+        setFormData(newFormData);
+        setSuccessMsg('📸 Profile photo uploaded and auto-fitted for all templates!');
+        setTimeout(() => setSuccessMsg(null), 4000);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemovePicture = () => {
+    const newFormData: CVData = {
+      ...formData,
+      personal: {
+        ...formData.personal,
+        picture: '',
+      },
+    };
+    pushHistory(newFormData);
+    setFormData(newFormData);
+    setSuccessMsg('Photo removed.');
+    setTimeout(() => setSuccessMsg(null), 3000);
+  };
+
   const handleDownloadPDF = async () => {
     setIsLoading(true);
     setError(null);
@@ -336,14 +377,7 @@ const CvBuilderClient = () => {
       const html2canvas = (await import('html2canvas')).default;
       const { jsPDF } = await import('jspdf');
 
-      const canvas = await html2canvas(resumeEl, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        backgroundColor: '#ffffff',
-      });
-
-      const imgData = canvas.toDataURL('image/png', 1.0);
+      const pageElements = resumeEl.querySelectorAll<HTMLElement>('.resume-page');
       const pdf = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
@@ -351,26 +385,32 @@ const CvBuilderClient = () => {
         compress: true,
       });
 
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-      const totalImgHeight = (canvas.height * pdfWidth) / canvas.width;
-
-      let heightLeft = totalImgHeight;
-      let position = 0;
-
-      // Page 1
-      pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, totalImgHeight);
-      heightLeft -= pdfHeight;
-
-      // Subsequent pages if CV flows over 1 page
-      while (heightLeft > 2) {
-        position -= pdfHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, totalImgHeight);
-        heightLeft -= pdfHeight;
+      if (pageElements && pageElements.length > 0) {
+        for (let i = 0; i < pageElements.length; i++) {
+          if (i > 0) {
+            pdf.addPage();
+          }
+          const pageCanvas = await html2canvas(pageElements[i], {
+            scale: 2,
+            useCORS: true,
+            logging: false,
+            backgroundColor: '#ffffff',
+          });
+          const imgData = pageCanvas.toDataURL('image/png', 1.0);
+          pdf.addImage(imgData, 'PNG', 0, 0, 210, 297);
+        }
+      } else {
+        const canvas = await html2canvas(resumeEl, {
+          scale: 2,
+          useCORS: true,
+          logging: false,
+          backgroundColor: '#ffffff',
+        });
+        const imgData = canvas.toDataURL('image/png', 1.0);
+        pdf.addImage(imgData, 'PNG', 0, 0, 210, 297);
       }
 
-      const filename = `${(formData.personal.fullName || resumeTitle || 'Resume').trim().replace(/\s+/g, '_')}_CV.pdf`;
+      const filename = `${(formData.personal?.fullName || resumeTitle || 'Resume').trim().replace(/\s+/g, '_')}_CV.pdf`;
       pdf.save(filename);
     } catch (err) { 
       console.error('PDF export error, falling back to print dialog:', err);
@@ -396,7 +436,9 @@ const CvBuilderClient = () => {
           <style>
             @page { size: A4; margin: 0; }
             body { margin: 0; padding: 0; background: #fff !important; }
-            #resume-preview { box-shadow: none !important; margin: 0 auto !important; width: 210mm !important; min-height: 297mm !important; height: auto !important; overflow: visible !important; }
+            .resume-page { box-shadow: none !important; margin: 0 auto !important; width: 210mm !important; min-height: 297mm !important; height: 297mm !important; page-break-after: always; break-after: page; }
+            .resume-page:last-child { page-break-after: avoid; break-after: avoid; }
+            .pageBreakVisualIndicator { display: none !important; }
           </style>
         </head>
         <body>
@@ -489,10 +531,59 @@ const CvBuilderClient = () => {
             <p className={styles.sectionDesc}>Edit your {activeSection} information below.</p>
             
             {activeSection === 'picture' && (
-              <div className={styles.formGrid}>
-                <div className={styles.formGroupFull}>
-                  <label className={styles.label}>Picture URL</label>
-                  <input className={styles.input} placeholder="https://example.com/photo.jpg" value={formData.personal.picture || ''} onChange={e => setFormData({...formData, personal: {...formData.personal, picture: e.target.value}})} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                {formData.personal.picture ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', backgroundColor: '#18181b', padding: '1.25rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                    <img
+                      src={formData.personal.picture}
+                      alt="Profile Preview"
+                      style={{
+                        width: '85px',
+                        height: '85px',
+                        minWidth: '85px',
+                        minHeight: '85px',
+                        borderRadius: '50%',
+                        objectFit: 'cover',
+                        border: `3px solid ${design.primaryColor || '#2563eb'}`,
+                        boxShadow: '0 4px 14px rgba(0,0,0,0.3)',
+                      }}
+                    />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 700, color: '#fff', fontSize: '0.95rem', marginBottom: '4px' }}>Active Profile Photo</div>
+                      <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)', marginBottom: '10px' }}>Auto-scaled and fitted to each template style</div>
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                        <label style={{ backgroundColor: '#2563eb', color: '#fff', padding: '6px 14px', borderRadius: '6px', fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                          <span>📷 Change Photo</span>
+                          <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleImageFileChange} />
+                        </label>
+                        <button
+                          type="button"
+                          onClick={handleRemovePicture}
+                          style={{ backgroundColor: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '6px 14px', borderRadius: '6px', fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer' }}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2.5rem 1.5rem', border: '2px dashed rgba(255,255,255,0.2)', borderRadius: '12px', cursor: 'pointer', backgroundColor: 'rgba(255,255,255,0.02)', transition: 'all 0.2s', textAlign: 'center' }}>
+                    <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>📸</div>
+                    <div style={{ fontWeight: 700, color: '#fff', fontSize: '1rem', marginBottom: '0.25rem' }}>Upload Profile Picture</div>
+                    <div style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.5)', marginBottom: '1.25rem' }}>PNG, JPG, WEBP up to 6MB. Auto-cropped to template framing.</div>
+                    <span style={{ backgroundColor: '#2563eb', color: '#fff', padding: '8px 18px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 600 }}>Choose from Computer / Device</span>
+                    <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleImageFileChange} />
+                  </label>
+                )}
+
+                <div style={{ marginTop: '0.5rem' }}>
+                  <label className={styles.label} style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)' }}>Or Enter Image URL Directly:</label>
+                  <input
+                    className={styles.input}
+                    placeholder="https://example.com/photo.jpg"
+                    value={formData.personal.picture || ''}
+                    onChange={e => setFormData({ ...formData, personal: { ...formData.personal, picture: e.target.value } })}
+                  />
                 </div>
               </div>
             )}
