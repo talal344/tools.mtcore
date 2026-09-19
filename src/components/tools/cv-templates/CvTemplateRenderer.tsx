@@ -129,21 +129,26 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
     .map(s => s.trim())
     .filter(Boolean);
 
-  // Check whether extra secondary sections exist that warrant rendering on Page 2
-  const hasExtraSections = Boolean(
-    (formData.awards && formData.awards.length > 0) ||
-    (formData.certifications && formData.certifications.length > 0) ||
-    (formData.publications && formData.publications.length > 0) ||
-    (formData.volunteer && formData.volunteer.length > 0) ||
-    (formData.references && formData.references.trim().length > 0) ||
-    (formData.languages && formData.languages.length > 0) ||
-    (formData.interests && formData.interests.length > 0) ||
-    (formData.profiles && formData.profiles.length > 0) ||
-    (formData.experience && formData.experience.length > 2) ||
-    (formData.projects && formData.projects.length > 2)
-  );
+  // Height-based page split: estimate total content height in px.
+  // A4 page content area ≈ 1050px at standard rendering (297mm - padding).
+  // Only split to Page 2 when content genuinely won't fit on Page 1.
+  const estimatedHeight =
+    130 + // Header (name, title, contact)
+    (formData.aiSummary ? 80 : 0) +
+    (formData.experience?.length || 0) * 90 +
+    (formData.education?.length || 0) * 50 +
+    (formData.projects?.length || 0) * 70 +
+    (techSkills.length > 0 || softSkills.length > 0 ? 85 : 0) +
+    (formData.certifications?.length || 0) * 40 +
+    (formData.awards?.length || 0) * 50 +
+    (formData.publications?.length || 0) * 55 +
+    (formData.volunteer?.length || 0) * 65 +
+    (formData.languages?.length > 0 ? 45 : 0) +
+    (formData.interests?.length > 0 ? 45 : 0) +
+    (formData.profiles?.length > 0 ? 45 : 0) +
+    (formData.references?.trim() ? 45 : 0);
 
-  const hasPage2 = hasExtraSections;
+  const hasPage2 = estimatedHeight > 1050;
 
   const docBaseStyle: React.CSSProperties = {
     fontFamily: `${typography.bodyFont}, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`,
