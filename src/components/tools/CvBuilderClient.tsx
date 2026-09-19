@@ -421,7 +421,7 @@ const CvBuilderClient = () => {
 
       <main className={styles.mainLayout}>
         {/* Section 1: Left Form Editor Pane */}
-        <section className={styles.editorPane}>
+        <div className={styles.editorPane}>
           <div className={styles.sidebarIcons}>
             {SECTIONS.map(section => (
               <div key={section.id} className={`${styles.navIcon} ${activeSection === section.id ? styles.active : ''}`} onClick={() => setActiveSection(section.id)} title={section.label}>
@@ -630,20 +630,20 @@ const CvBuilderClient = () => {
               </div>
             )}
           </div>
-        </section>
+        </div>
 
         {/* Section 2: Middle Live Preview Pane */}
-        <section className={styles.previewPane}>
+        <div className={styles.previewPane}>
           <CvTemplateRenderer 
             formData={formData}
             selectedTemplate={selectedTemplate}
             typography={typography}
             design={design}
           />
-        </section>
+        </div>
 
         {/* Section 3: Right Settings & Templates Pane */}
-        <section className={styles.settingsPane}>
+        <div className={styles.settingsPane}>
           <div className={styles.settingsHeader}>
             <h3 className={styles.settingsTitle}>
               {rightPaneTab === 'templates' && 'Templates'}
@@ -768,10 +768,10 @@ const CvBuilderClient = () => {
               </div>
             )}
           </div>
-        </section>
+        </div>
 
         {/* Section 4: Right Tab Icons */}
-        <section className={styles.rightToolbar}>
+        <div className={styles.rightToolbar}>
           {[
             { id: 'templates', icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5zM14 5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1V5zM4 15a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-4zM14 12a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1v-7z"/></svg>, label: 'Templates' },
             { id: 'layout', icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>, label: 'Layout' },
@@ -782,7 +782,7 @@ const CvBuilderClient = () => {
               {tab.icon}
             </div>
           ))}
-        </section>
+        </div>
       </main>
     </div>
   );

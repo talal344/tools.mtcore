@@ -117,21 +117,23 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
   const tColor = design.textColor || '#1f2937';
   const bgColor = design.backgroundColor || '#ffffff';
 
-  const docStyle: React.CSSProperties = {
-    fontFamily: `${typography.bodyFont}, -apple-system, sans-serif`,
+  const docBaseStyle: React.CSSProperties = {
+    fontFamily: `${typography.bodyFont}, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`,
     fontSize: `${Number(typography.bodySize) || 10}pt`,
     lineHeight: typography.bodyLineHeight || '1.5',
     color: tColor,
     backgroundColor: bgColor,
-    // Custom CSS variable for primary color
-    ['--tpl-primary' as string]: pColor,
+    width: '210mm',
+    minHeight: '297mm',
+    boxSizing: 'border-box',
+    margin: '0 auto',
+    boxShadow: '0 20px 40px rgba(0, 0, 0, 0.45)',
+    position: 'relative',
+    overflow: 'hidden',
   };
 
-  const headingStyle: React.CSSProperties = {
-    fontFamily: `${typography.headingFont}, -apple-system, sans-serif`,
-  };
+  const headingFont = `${typography.headingFont}, -apple-system, BlinkMacSystemFont, sans-serif`;
 
-  // Helper getters
   const techSkills = (formData.skills?.technical || '')
     .split(',')
     .map(s => s.trim())
@@ -141,38 +143,131 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
     .map(s => s.trim())
     .filter(Boolean);
 
-  // Common Section Renderers
-  const renderSummary = (titleClass = styles.onyxSectionTitle) => {
-    if (!formData.aiSummary) return null;
+  // Reusable Avatar Renderer
+  const renderAvatar = (size = 80, borderColor = pColor) => {
+    if (formData.personal.picture) {
+      return (
+        <img
+          src={formData.personal.picture}
+          alt="Avatar"
+          style={{
+            width: `${size}px`,
+            height: `${size}px`,
+            minWidth: `${size}px`,
+            minHeight: `${size}px`,
+            maxWidth: `${size}px`,
+            maxHeight: `${size}px`,
+            borderRadius: '50%',
+            objectFit: 'cover',
+            border: `3px solid ${borderColor}`,
+            display: 'block',
+            margin: '0 auto 16px auto',
+          }}
+        />
+      );
+    }
     return (
-      <div className={styles.onyxSection}>
-        <div className={titleClass} style={headingStyle}>
-          <span>Summary</span>
-        </div>
-        <div className={styles.itemDesc}>{formData.aiSummary}</div>
+      <div
+        style={{
+          width: `${size}px`,
+          height: `${size}px`,
+          minWidth: `${size}px`,
+          minHeight: `${size}px`,
+          maxWidth: `${size}px`,
+          maxHeight: `${size}px`,
+          borderRadius: '50%',
+          backgroundColor: borderColor,
+          color: '#ffffff',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: `${Math.round(size * 0.38)}pt`,
+          fontWeight: 800,
+          margin: '0 auto 16px auto',
+          boxShadow: '0 4px 10px rgba(0,0,0,0.1)',
+        }}
+      >
+        {(formData.personal.fullName || 'A').charAt(0).toUpperCase()}
       </div>
     );
   };
 
-  const renderExperience = (titleClass = styles.onyxSectionTitle, isBoxed = false) => {
+  // Reusable Item Header
+  const renderItemHeader = (title: string, subtitle?: string, date?: string, location?: string) => (
+    <div style={{ marginBottom: '6px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', width: '100%', gap: '12px' }}>
+        <span style={{ fontWeight: 700, fontSize: '10pt', color: '#0f172a' }}>{title}</span>
+        {date && <span style={{ fontSize: '8.5pt', color: '#64748b', fontWeight: 500, whiteSpace: 'nowrap' }}>{date}</span>}
+      </div>
+      {(subtitle || location) && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', fontSize: '9pt', color: pColor, fontWeight: 600, marginTop: '2px' }}>
+          <span>{subtitle}</span>
+          {location && <span style={{ fontSize: '8.5pt', color: '#64748b', fontWeight: 400 }}>{location}</span>}
+        </div>
+      )}
+    </div>
+  );
+
+  // Reusable Section Header
+  const renderSectionTitle = (title: string, styleVariant: 'underline' | 'pill' | 'terminal' | 'bold' = 'underline') => {
+    if (styleVariant === 'pill') {
+      return (
+        <div style={{ display: 'inline-block', backgroundColor: `${pColor}20`, color: pColor, fontWeight: 700, fontSize: '9.5pt', textTransform: 'uppercase', letterSpacing: '0.06em', padding: '4px 14px', borderRadius: '20px', marginBottom: '12px', fontFamily: headingFont }}>
+          {title}
+        </div>
+      );
+    }
+    if (styleVariant === 'terminal') {
+      return (
+        <div style={{ fontFamily: 'monospace', fontSize: '10pt', fontWeight: 700, color: pColor, borderBottom: '1px dashed #94a3b8', paddingBottom: '3px', marginBottom: '12px', textTransform: 'uppercase' }}>
+          {`// ${title}`}
+        </div>
+      );
+    }
+    if (styleVariant === 'bold') {
+      return (
+        <div style={{ fontSize: '11pt', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#0f172a', borderBottom: `2.5px solid ${pColor}`, paddingBottom: '3px', marginBottom: '12px', fontFamily: headingFont }}>
+          {title}
+        </div>
+      );
+    }
+    return (
+      <div style={{ fontSize: '11pt', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#0f172a', borderBottom: `2px solid ${pColor}`, paddingBottom: '3px', marginBottom: '12px', fontFamily: headingFont }}>
+        {title}
+      </div>
+    );
+  };
+
+  // Sections
+  const renderSummary = (variant: 'underline' | 'pill' | 'terminal' | 'bold' = 'underline') => {
+    if (!formData.aiSummary) return null;
+    return (
+      <div style={{ marginBottom: '18px' }}>
+        {renderSectionTitle('Summary', variant)}
+        <div style={{ fontSize: '9pt', lineHeight: 1.55, color: '#334155', whiteSpace: 'pre-line' }}>{formData.aiSummary}</div>
+      </div>
+    );
+  };
+
+  const renderExperience = (variant: 'underline' | 'pill' | 'terminal' | 'bold' = 'underline', isBoxed = false) => {
     if (!formData.experience || formData.experience.length === 0) return null;
     return (
-      <div className={styles.onyxSection}>
-        <div className={titleClass} style={headingStyle}>
-          <span>Experience</span>
-        </div>
+      <div style={{ marginBottom: '18px' }}>
+        {renderSectionTitle('Experience', variant)}
         {formData.experience.map(exp => (
-          <div key={exp.id} className={isBoxed ? styles.kakunaCard : styles.itemRow}>
-            <div className={styles.itemHeader}>
-              <span>{exp.title || 'Role Title'}</span>
-              <span className={styles.itemDate}>{exp.dates}</span>
-            </div>
-            <div className={styles.itemSubHeader}>
-              <span>{exp.company || 'Company'}</span>
-              {exp.location && <span>{exp.location}</span>}
-            </div>
+          <div
+            key={exp.id}
+            style={
+              isBoxed
+                ? { backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderLeft: `4px solid ${pColor}`, borderRadius: '6px', padding: '12px 14px', marginBottom: '10px' }
+                : { marginBottom: '12px' }
+            }
+          >
+            {renderItemHeader(exp.title || 'Role Title', exp.company || 'Company', exp.dates, exp.location)}
             {exp.responsibilities && (
-              <div className={styles.itemDesc}>{exp.responsibilities}</div>
+              <div style={{ fontSize: '8.8pt', lineHeight: 1.5, color: '#475569', whiteSpace: 'pre-line', marginTop: '4px' }}>
+                {exp.responsibilities}
+              </div>
             )}
           </div>
         ))}
@@ -180,72 +275,76 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
     );
   };
 
-  const renderEducation = (titleClass = styles.onyxSectionTitle, isBoxed = false) => {
+  const renderEducation = (variant: 'underline' | 'pill' | 'terminal' | 'bold' = 'underline', isBoxed = false) => {
     if (!formData.education || formData.education.length === 0) return null;
     return (
-      <div className={styles.onyxSection}>
-        <div className={titleClass} style={headingStyle}>
-          <span>Education</span>
-        </div>
+      <div style={{ marginBottom: '18px' }}>
+        {renderSectionTitle('Education', variant)}
         {formData.education.map(edu => (
-          <div key={edu.id} className={isBoxed ? styles.kakunaCard : styles.itemRow}>
-            <div className={styles.itemHeader}>
-              <span>{edu.degree || 'Degree'} {edu.major ? `in ${edu.major}` : ''}</span>
-              <span className={styles.itemDate}>{edu.graduationYear}</span>
-            </div>
-            <div className={styles.itemSubHeader}>
-              <span>{edu.university || 'University'}</span>
-              {edu.location && <span>{edu.location}</span>}
-            </div>
+          <div
+            key={edu.id}
+            style={
+              isBoxed
+                ? { backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderLeft: `4px solid ${pColor}`, borderRadius: '6px', padding: '12px 14px', marginBottom: '10px' }
+                : { marginBottom: '10px' }
+            }
+          >
+            {renderItemHeader(`${edu.degree || 'Degree'}${edu.major ? ` in ${edu.major}` : ''}`, edu.university, edu.graduationYear, edu.location)}
           </div>
         ))}
       </div>
     );
   };
 
-  const renderProjects = (titleClass = styles.onyxSectionTitle, isBoxed = false) => {
+  const renderProjects = (variant: 'underline' | 'pill' | 'terminal' | 'bold' = 'underline', isBoxed = false) => {
     if (!formData.projects || formData.projects.length === 0) return null;
     return (
-      <div className={styles.onyxSection}>
-        <div className={titleClass} style={headingStyle}>
-          <span>Projects</span>
-        </div>
+      <div style={{ marginBottom: '18px' }}>
+        {renderSectionTitle('Projects', variant)}
         {formData.projects.map((proj, i) => (
-          <div key={i} className={isBoxed ? styles.kakunaCard : styles.itemRow}>
-            <div className={styles.itemHeader}>
-              <span>{proj.name}</span>
-              {proj.url && <span className={styles.itemDate}>{proj.url}</span>}
-            </div>
-            {proj.description && <div className={styles.itemDesc}>{proj.description}</div>}
+          <div
+            key={i}
+            style={
+              isBoxed
+                ? { backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderLeft: `4px solid ${pColor}`, borderRadius: '6px', padding: '12px 14px', marginBottom: '10px' }
+                : { marginBottom: '10px' }
+            }
+          >
+            {renderItemHeader(proj.name, undefined, undefined, proj.url)}
+            {proj.description && (
+              <div style={{ fontSize: '8.8pt', lineHeight: 1.5, color: '#475569', marginTop: '3px' }}>{proj.description}</div>
+            )}
           </div>
         ))}
       </div>
     );
   };
 
-  const renderSkills = (titleClass = styles.onyxSectionTitle) => {
+  const renderSkills = (variant: 'underline' | 'pill' | 'terminal' | 'bold' = 'underline') => {
     if (techSkills.length === 0 && softSkills.length === 0) return null;
     return (
-      <div className={styles.onyxSection}>
-        <div className={titleClass} style={headingStyle}>
-          <span>Skills</span>
-        </div>
+      <div style={{ marginBottom: '18px' }}>
+        {renderSectionTitle('Skills', variant)}
         {techSkills.length > 0 && (
-          <div style={{ marginBottom: '8px' }}>
-            <div style={{ fontSize: '8pt', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', marginBottom: '4px' }}>Technical</div>
-            <div className={styles.tagContainer}>
+          <div style={{ marginBottom: '10px' }}>
+            <div style={{ fontSize: '7.5pt', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', marginBottom: '4px', letterSpacing: '0.04em' }}>Technical</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
               {techSkills.map((s, i) => (
-                <span key={i} className={styles.tagBadge}>{s}</span>
+                <span key={i} style={{ backgroundColor: `${pColor}14`, color: pColor, border: `1px solid ${pColor}35`, padding: '3px 8px', borderRadius: '4px', fontSize: '8pt', fontWeight: 600 }}>
+                  {s}
+                </span>
               ))}
             </div>
           </div>
         )}
         {softSkills.length > 0 && (
           <div>
-            <div style={{ fontSize: '8pt', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', marginBottom: '4px' }}>Soft Skills</div>
-            <div className={styles.tagContainer}>
+            <div style={{ fontSize: '7.5pt', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', marginBottom: '4px', letterSpacing: '0.04em' }}>Soft Skills</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
               {softSkills.map((s, i) => (
-                <span key={i} className={styles.tagBadge} style={{ background: 'rgba(0,0,0,0.04)', borderColor: '#cbd5e1', color: '#475569' }}>{s}</span>
+                <span key={i} style={{ backgroundColor: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1', padding: '3px 8px', borderRadius: '4px', fontSize: '8pt', fontWeight: 500 }}>
+                  {s}
+                </span>
               ))}
             </div>
           </div>
@@ -254,36 +353,28 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
     );
   };
 
-  const renderCertifications = (titleClass = styles.onyxSectionTitle) => {
+  const renderCertifications = (variant: 'underline' | 'pill' | 'terminal' | 'bold' = 'underline') => {
     if (!formData.certifications || formData.certifications.length === 0) return null;
     return (
-      <div className={styles.onyxSection}>
-        <div className={titleClass} style={headingStyle}>
-          <span>Certifications</span>
-        </div>
+      <div style={{ marginBottom: '18px' }}>
+        {renderSectionTitle('Certifications', variant)}
         {formData.certifications.map(c => (
-          <div key={c.id} style={{ marginBottom: '6px' }}>
-            <div className={styles.itemHeader}>
-              <span>{c.name}</span>
-              <span className={styles.itemDate}>{c.year}</span>
-            </div>
-            {c.org && <div className={styles.itemSubHeader}>{c.org}</div>}
+          <div key={c.id} style={{ marginBottom: '8px' }}>
+            {renderItemHeader(c.name, c.org, c.year)}
           </div>
         ))}
       </div>
     );
   };
 
-  const renderLanguages = (titleClass = styles.onyxSectionTitle) => {
+  const renderLanguages = (variant: 'underline' | 'pill' | 'terminal' | 'bold' = 'underline') => {
     if (!formData.languages || formData.languages.length === 0) return null;
     return (
-      <div className={styles.onyxSection}>
-        <div className={titleClass} style={headingStyle}>
-          <span>Languages</span>
-        </div>
-        <div className={styles.tagContainer}>
+      <div style={{ marginBottom: '18px' }}>
+        {renderSectionTitle('Languages', variant)}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
           {formData.languages.map((l, i) => (
-            <span key={i} className={styles.tagBadge} style={{ background: '#f1f5f9', color: '#334155', borderColor: '#e2e8f0' }}>
+            <span key={i} style={{ backgroundColor: '#f8fafc', color: '#334155', border: '1px solid #e2e8f0', padding: '3px 9px', borderRadius: '4px', fontSize: '8pt' }}>
               <strong>{l.name}</strong> {l.fluency ? `(${l.fluency})` : ''}
             </span>
           ))}
@@ -292,16 +383,12 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
     );
   };
 
-  const renderReferences = (titleClass = styles.onyxSectionTitle) => {
+  const renderReferences = (variant: 'underline' | 'pill' | 'terminal' | 'bold' = 'underline') => {
     if (!formData.references) return null;
     return (
-      <div className={styles.onyxSection}>
-        <div className={titleClass} style={headingStyle}>
-          <span>References</span>
-        </div>
-        <div className={styles.itemDesc} style={{ fontStyle: 'italic', color: '#64748b' }}>
-          {formData.references}
-        </div>
+      <div style={{ marginBottom: '18px' }}>
+        {renderSectionTitle('References', variant)}
+        <div style={{ fontSize: '8.8pt', fontStyle: 'italic', color: '#64748b' }}>{formData.references}</div>
       </div>
     );
   };
@@ -311,91 +398,109 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
   // =========================================================================
   if (selectedTemplate === 'onyx') {
     return (
-      <div id="resume-preview" className={`${styles.cvDocument} ${styles.tplOnyx}`} style={docStyle}>
-        <header className={styles.onyxHeader}>
+      <div id="resume-preview" className={styles.cvDocument} style={{ ...docBaseStyle, padding: '35px 40px', borderTop: `6px solid ${pColor}` }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', paddingBottom: '18px', borderBottom: '2px solid #e2e8f0', marginBottom: '22px' }}>
           <div>
-            <h1 className={styles.onyxName} style={headingStyle}>{formData.personal.fullName || 'YOUR NAME'}</h1>
-            <p className={styles.onyxTitle}>{formData.personal.title || 'Professional Title'}</p>
-            <div className={styles.onyxContactList}>
-              {formData.personal.email && <div className={styles.contactItem}>✉ {formData.personal.email}</div>}
-              {formData.personal.phone && <div className={styles.contactItem}>📞 {formData.personal.phone}</div>}
-              {formData.personal.address && <div className={styles.contactItem}>📍 {formData.personal.address}</div>}
-              {formData.personal.portfolio && <div className={styles.contactItem}>🌐 {formData.personal.portfolio}</div>}
-              {formData.personal.linkedin && <div className={styles.contactItem}>💼 {formData.personal.linkedin}</div>}
+            <h1 style={{ fontSize: '26pt', fontWeight: 800, color: '#0f172a', margin: '0 0 4px 0', lineHeight: 1.1, fontFamily: headingFont }}>
+              {formData.personal.fullName || 'YOUR NAME'}
+            </h1>
+            <p style={{ fontSize: '13pt', fontWeight: 600, color: pColor, margin: '0 0 10px 0' }}>
+              {formData.personal.title || 'Professional Title'}
+            </p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 16px', fontSize: '8.5pt', color: '#64748b' }}>
+              {formData.personal.email && <span>✉ {formData.personal.email}</span>}
+              {formData.personal.phone && <span>📞 {formData.personal.phone}</span>}
+              {formData.personal.address && <span>📍 {formData.personal.address}</span>}
+              {formData.personal.portfolio && <span>🌐 {formData.personal.portfolio}</span>}
+              {formData.personal.linkedin && <span>💼 {formData.personal.linkedin}</span>}
             </div>
           </div>
-          {formData.personal.picture && (
-            <img src={formData.personal.picture} alt="Profile" style={{ width: '80px', height: '80px', borderRadius: '8px', objectFit: 'cover' }} />
-          )}
-        </header>
+          {renderAvatar(75, pColor)}
+        </div>
 
-        {renderSummary()}
-        {renderExperience()}
-        {renderEducation()}
-        {renderProjects()}
-        {renderSkills()}
-        {renderCertifications()}
-        {renderLanguages()}
-        {renderReferences()}
+        {renderSummary('underline')}
+        {renderExperience('underline')}
+        {renderEducation('underline')}
+        {renderProjects('underline')}
+        {renderSkills('underline')}
+        {renderCertifications('underline')}
+        {renderLanguages('underline')}
+        {renderReferences('underline')}
       </div>
     );
   }
 
   // =========================================================================
-  // 2. PIKACHU (Left Sidebar Creative)
+  // 2. PIKACHU (Creative Left Sidebar)
   // =========================================================================
   if (selectedTemplate === 'pikachu') {
     return (
-      <div id="resume-preview" className={`${styles.cvDocument} ${styles.tplPikachu}`} style={docStyle}>
+      <div
+        id="resume-preview"
+        className={styles.cvDocument}
+        style={{
+          ...docBaseStyle,
+          display: 'grid',
+          gridTemplateColumns: '32% 68%',
+          minHeight: '297mm',
+        }}
+      >
         {/* Left Sidebar */}
-        <aside className={styles.pikachuSidebar}>
-          {formData.personal.picture ? (
-            <img src={formData.personal.picture} alt="Avatar" className={styles.sidebarAvatar} />
-          ) : (
-            <div className={styles.sidebarAvatar} style={{ background: pColor, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '24pt', fontWeight: 800 }}>
-              {(formData.personal.fullName || 'U').charAt(0)}
-            </div>
-          )}
+        <div
+          style={{
+            backgroundColor: '#f8fafc',
+            borderRight: '1px solid #e2e8f0',
+            padding: '35px 20px',
+            boxSizing: 'border-box',
+          }}
+        >
+          {renderAvatar(85, pColor)}
 
-          <div className={styles.sidebarSection}>
-            <div className={styles.sidebarTitle} style={headingStyle}>Contact</div>
+          {/* Contact Details */}
+          <div style={{ marginBottom: '22px' }}>
+            <div style={{ fontSize: '9.5pt', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#0f172a', borderBottom: `2px solid ${pColor}`, paddingBottom: '3px', marginBottom: '10px', fontFamily: headingFont }}>
+              Contact
+            </div>
             {formData.personal.email && (
-              <div className={styles.sidebarContactItem}>
-                <span className={styles.sidebarContactLabel}>Email</span>
-                <span>{formData.personal.email}</span>
+              <div style={{ marginBottom: '8px', fontSize: '8.2pt' }}>
+                <div style={{ fontSize: '7pt', fontWeight: 700, textTransform: 'uppercase', color: '#94a3b8' }}>Email</div>
+                <div style={{ color: '#334155', wordBreak: 'break-all' }}>{formData.personal.email}</div>
               </div>
             )}
             {formData.personal.phone && (
-              <div className={styles.sidebarContactItem}>
-                <span className={styles.sidebarContactLabel}>Phone</span>
-                <span>{formData.personal.phone}</span>
+              <div style={{ marginBottom: '8px', fontSize: '8.2pt' }}>
+                <div style={{ fontSize: '7pt', fontWeight: 700, textTransform: 'uppercase', color: '#94a3b8' }}>Phone</div>
+                <div style={{ color: '#334155' }}>{formData.personal.phone}</div>
               </div>
             )}
             {formData.personal.address && (
-              <div className={styles.sidebarContactItem}>
-                <span className={styles.sidebarContactLabel}>Location</span>
-                <span>{formData.personal.address}</span>
+              <div style={{ marginBottom: '8px', fontSize: '8.2pt' }}>
+                <div style={{ fontSize: '7pt', fontWeight: 700, textTransform: 'uppercase', color: '#94a3b8' }}>Location</div>
+                <div style={{ color: '#334155' }}>{formData.personal.address}</div>
               </div>
             )}
             {formData.personal.portfolio && (
-              <div className={styles.sidebarContactItem}>
-                <span className={styles.sidebarContactLabel}>Website</span>
-                <span>{formData.personal.portfolio}</span>
+              <div style={{ marginBottom: '8px', fontSize: '8.2pt' }}>
+                <div style={{ fontSize: '7pt', fontWeight: 700, textTransform: 'uppercase', color: '#94a3b8' }}>Portfolio</div>
+                <div style={{ color: '#334155', wordBreak: 'break-all' }}>{formData.personal.portfolio}</div>
               </div>
             )}
           </div>
 
+          {/* Sidebar Skills with Level Bars */}
           {techSkills.length > 0 && (
-            <div className={styles.sidebarSection}>
-              <div className={styles.sidebarTitle} style={headingStyle}>Skills</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                {techSkills.map((s, i) => (
-                  <div key={i} style={{ fontSize: '8.5pt' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
+            <div style={{ marginBottom: '22px' }}>
+              <div style={{ fontSize: '9.5pt', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#0f172a', borderBottom: `2px solid ${pColor}`, paddingBottom: '3px', marginBottom: '10px', fontFamily: headingFont }}>
+                Skills
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '7px' }}>
+                {techSkills.map((s, idx) => (
+                  <div key={idx} style={{ fontSize: '8pt' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#334155', fontWeight: 600, marginBottom: '2px' }}>
                       <span>{s}</span>
                     </div>
-                    <div style={{ height: '4px', background: '#e2e8f0', borderRadius: '2px', overflow: 'hidden' }}>
-                      <div style={{ height: '100%', width: `${80 + (i % 4) * 5}%`, background: pColor, borderRadius: '2px' }} />
+                    <div style={{ height: '4px', backgroundColor: '#e2e8f0', borderRadius: '2px', overflow: 'hidden' }}>
+                      <div style={{ height: '100%', width: `${85 - (idx % 4) * 6}%`, backgroundColor: pColor, borderRadius: '2px' }} />
                     </div>
                   </div>
                 ))}
@@ -403,55 +508,82 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
             </div>
           )}
 
-          {renderCertifications(styles.sidebarTitle)}
-          {renderLanguages(styles.sidebarTitle)}
-        </aside>
+          {/* Certifications in Sidebar */}
+          {renderCertifications('underline')}
+          {/* Languages in Sidebar */}
+          {renderLanguages('underline')}
+        </div>
 
         {/* Right Main Column */}
-        <main className={styles.pikachuMain}>
-          <h1 className={styles.pikachuName} style={headingStyle}>{formData.personal.fullName || 'YOUR NAME'}</h1>
-          <p className={styles.pikachuTitle}>{formData.personal.title || 'Professional Title'}</p>
+        <div style={{ padding: '35px 30px', boxSizing: 'border-box', backgroundColor: '#ffffff' }}>
+          <h1 style={{ fontSize: '26pt', fontWeight: 800, color: '#0f172a', margin: '0 0 3px 0', lineHeight: 1.1, fontFamily: headingFont }}>
+            {formData.personal.fullName || 'YOUR NAME'}
+          </h1>
+          <p style={{ fontSize: '13pt', fontWeight: 600, color: pColor, margin: '0 0 18px 0' }}>
+            {formData.personal.title || 'Professional Title'}
+          </p>
 
-          {renderSummary(styles.pikachuSectionTitle)}
-          {renderExperience(styles.pikachuSectionTitle)}
-          {renderEducation(styles.pikachuSectionTitle)}
-          {renderProjects(styles.pikachuSectionTitle)}
-          {renderReferences(styles.pikachuSectionTitle)}
-        </main>
+          {renderSummary('underline')}
+          {renderExperience('underline')}
+          {renderEducation('underline')}
+          {renderProjects('underline')}
+          {renderReferences('underline')}
+        </div>
       </div>
     );
   }
 
   // =========================================================================
-  // 3. GENGAR (Executive Header Banner)
+  // 3. GENGAR (Executive Top Header Banner)
   // =========================================================================
   if (selectedTemplate === 'gengar') {
     return (
-      <div id="resume-preview" className={`${styles.cvDocument} ${styles.tplGengar}`} style={docStyle}>
-        <div className={styles.gengarBanner}>
-          <h1 className={styles.gengarName} style={headingStyle}>{formData.personal.fullName || 'YOUR NAME'}</h1>
-          <p className={styles.gengarTitle}>{formData.personal.title || 'Professional Title'}</p>
-          <div className={styles.gengarBadges}>
-            {formData.personal.email && <span className={styles.gengarBadge}>✉ {formData.personal.email}</span>}
-            {formData.personal.phone && <span className={styles.gengarBadge}>📞 {formData.personal.phone}</span>}
-            {formData.personal.address && <span className={styles.gengarBadge}>📍 {formData.personal.address}</span>}
-            {formData.personal.portfolio && <span className={styles.gengarBadge}>🌐 {formData.personal.portfolio}</span>}
-            {formData.personal.linkedin && <span className={styles.gengarBadge}>💼 {formData.personal.linkedin}</span>}
+      <div id="resume-preview" className={styles.cvDocument} style={docBaseStyle}>
+        {/* Full Width Top Banner */}
+        <div style={{ backgroundColor: pColor, color: '#ffffff', padding: '32px 36px', width: '100%', boxSizing: 'border-box' }}>
+          <h1 style={{ fontSize: '26pt', fontWeight: 800, color: '#ffffff', margin: '0 0 4px 0', fontFamily: headingFont }}>
+            {formData.personal.fullName || 'YOUR NAME'}
+          </h1>
+          <p style={{ fontSize: '13pt', fontWeight: 500, color: 'rgba(255, 255, 255, 0.9)', margin: '0 0 14px 0' }}>
+            {formData.personal.title || 'Professional Title'}
+          </p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+            {formData.personal.email && (
+              <span style={{ backgroundColor: 'rgba(255, 255, 255, 0.18)', padding: '4px 10px', borderRadius: '16px', fontSize: '8pt', color: '#fff' }}>
+                ✉ {formData.personal.email}
+              </span>
+            )}
+            {formData.personal.phone && (
+              <span style={{ backgroundColor: 'rgba(255, 255, 255, 0.18)', padding: '4px 10px', borderRadius: '16px', fontSize: '8pt', color: '#fff' }}>
+                📞 {formData.personal.phone}
+              </span>
+            )}
+            {formData.personal.address && (
+              <span style={{ backgroundColor: 'rgba(255, 255, 255, 0.18)', padding: '4px 10px', borderRadius: '16px', fontSize: '8pt', color: '#fff' }}>
+                📍 {formData.personal.address}
+              </span>
+            )}
+            {formData.personal.portfolio && (
+              <span style={{ backgroundColor: 'rgba(255, 255, 255, 0.18)', padding: '4px 10px', borderRadius: '16px', fontSize: '8pt', color: '#fff' }}>
+                🌐 {formData.personal.portfolio}
+              </span>
+            )}
           </div>
         </div>
 
-        <div className={styles.gengarBody}>
+        {/* 2-Column Body */}
+        <div style={{ display: 'grid', gridTemplateColumns: '58% 42%', gap: '26px', padding: '28px 36px', boxSizing: 'border-box' }}>
           <div>
-            {renderSummary(styles.gengarSectionTitle)}
-            {renderExperience(styles.gengarSectionTitle)}
-            {renderProjects(styles.gengarSectionTitle)}
+            {renderSummary('underline')}
+            {renderExperience('underline')}
+            {renderProjects('underline')}
           </div>
           <div>
-            {renderEducation(styles.gengarSectionTitle)}
-            {renderSkills(styles.gengarSectionTitle)}
-            {renderCertifications(styles.gengarSectionTitle)}
-            {renderLanguages(styles.gengarSectionTitle)}
-            {renderReferences(styles.gengarSectionTitle)}
+            {renderEducation('underline')}
+            {renderSkills('underline')}
+            {renderCertifications('underline')}
+            {renderLanguages('underline')}
+            {renderReferences('underline')}
           </div>
         </div>
       </div>
@@ -463,61 +595,68 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
   // =========================================================================
   if (selectedTemplate === 'glalie') {
     return (
-      <div id="resume-preview" className={`${styles.cvDocument} ${styles.tplGlalie}`} style={docStyle}>
-        <header className={styles.glalieHeader}>
-          <h1 className={styles.glalieName} style={headingStyle}>{formData.personal.fullName || 'YOUR NAME'}</h1>
-          <p className={styles.glalieTitle}>{formData.personal.title || 'Professional Title'}</p>
-          <div className={styles.glalieContact}>
+      <div id="resume-preview" className={styles.cvDocument} style={{ ...docBaseStyle, padding: '40px 45px' }}>
+        <div style={{ textAlign: 'center', marginBottom: '22px' }}>
+          <h1 style={{ fontSize: '24pt', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#0f172a', margin: '0 0 3px 0', fontFamily: headingFont }}>
+            {formData.personal.fullName || 'YOUR NAME'}
+          </h1>
+          <p style={{ fontSize: '11pt', color: '#475569', fontWeight: 500, margin: '0 0 8px 0' }}>
+            {formData.personal.title || 'Professional Title'}
+          </p>
+          <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: '6px 14px', fontSize: '8.5pt', color: '#64748b' }}>
             {formData.personal.email && <span>{formData.personal.email}</span>}
-            {formData.personal.phone && <span>{formData.personal.phone}</span>}
-            {formData.personal.address && <span>{formData.personal.address}</span>}
-            {formData.personal.portfolio && <span>{formData.personal.portfolio}</span>}
-            {formData.personal.linkedin && <span>{formData.personal.linkedin}</span>}
+            {formData.personal.phone && <span>• {formData.personal.phone}</span>}
+            {formData.personal.address && <span>• {formData.personal.address}</span>}
+            {formData.personal.portfolio && <span>• {formData.personal.portfolio}</span>}
           </div>
-          <div className={styles.glalieDivider} />
-        </header>
+          <div style={{ height: '1px', backgroundColor: '#cbd5e1', margin: '14px 0 18px 0' }} />
+        </div>
 
-        {renderSummary(styles.glalieSectionTitle)}
-        {renderExperience(styles.glalieSectionTitle)}
-        {renderEducation(styles.glalieSectionTitle)}
-        {renderProjects(styles.glalieSectionTitle)}
-        {renderSkills(styles.glalieSectionTitle)}
-        {renderCertifications(styles.glalieSectionTitle)}
-        {renderLanguages(styles.glalieSectionTitle)}
-        {renderReferences(styles.glalieSectionTitle)}
+        {renderSummary('underline')}
+        {renderExperience('underline')}
+        {renderEducation('underline')}
+        {renderProjects('underline')}
+        {renderSkills('underline')}
+        {renderCertifications('underline')}
+        {renderLanguages('underline')}
+        {renderReferences('underline')}
       </div>
     );
   }
 
   // =========================================================================
-  // 5. LAPRAS (Split 2-Column with Ocean Stripe)
+  // 5. LAPRAS (Split 2-Column with Accent Stripe)
   // =========================================================================
   if (selectedTemplate === 'lapras') {
     return (
-      <div id="resume-preview" className={`${styles.cvDocument} ${styles.tplLapras}`} style={docStyle}>
-        <header className={styles.laprasHeader}>
-          <h1 className={styles.onyxName} style={headingStyle}>{formData.personal.fullName || 'YOUR NAME'}</h1>
-          <p className={styles.onyxTitle}>{formData.personal.title || 'Professional Title'}</p>
-          <div className={styles.onyxContactList}>
+      <div id="resume-preview" className={styles.cvDocument} style={{ ...docBaseStyle, borderLeft: `8px solid ${pColor}`, padding: '35px 38px' }}>
+        <div style={{ paddingBottom: '16px', borderBottom: `2px solid ${pColor}`, marginBottom: '22px' }}>
+          <h1 style={{ fontSize: '25pt', fontWeight: 800, color: '#0f172a', margin: '0 0 3px 0', fontFamily: headingFont }}>
+            {formData.personal.fullName || 'YOUR NAME'}
+          </h1>
+          <p style={{ fontSize: '12pt', fontWeight: 600, color: pColor, margin: '0 0 8px 0' }}>
+            {formData.personal.title || 'Professional Title'}
+          </p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 16px', fontSize: '8.5pt', color: '#64748b' }}>
             {formData.personal.email && <span>✉ {formData.personal.email}</span>}
             {formData.personal.phone && <span>📞 {formData.personal.phone}</span>}
             {formData.personal.address && <span>📍 {formData.personal.address}</span>}
             {formData.personal.portfolio && <span>🌐 {formData.personal.portfolio}</span>}
           </div>
-        </header>
+        </div>
 
-        <div className={styles.laprasGrid}>
+        <div style={{ display: 'grid', gridTemplateColumns: '38% 62%', gap: '26px' }}>
           <div>
-            {renderEducation()}
-            {renderSkills()}
-            {renderCertifications()}
-            {renderLanguages()}
+            {renderEducation('underline')}
+            {renderSkills('underline')}
+            {renderCertifications('underline')}
+            {renderLanguages('underline')}
           </div>
           <div>
-            {renderSummary()}
-            {renderExperience()}
-            {renderProjects()}
-            {renderReferences()}
+            {renderSummary('underline')}
+            {renderExperience('underline')}
+            {renderProjects('underline')}
+            {renderReferences('underline')}
           </div>
         </div>
       </div>
@@ -529,27 +668,29 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
   // =========================================================================
   if (selectedTemplate === 'kakuna') {
     return (
-      <div id="resume-preview" className={`${styles.cvDocument} ${styles.tplKakuna}`} style={docStyle}>
-        <header className={styles.onyxHeader} style={{ borderBottomColor: pColor }}>
-          <div>
-            <h1 className={styles.onyxName} style={headingStyle}>{formData.personal.fullName || 'YOUR NAME'}</h1>
-            <p className={styles.onyxTitle}>{formData.personal.title || 'Professional Title'}</p>
-            <div className={styles.onyxContactList}>
-              {formData.personal.email && <span>✉ {formData.personal.email}</span>}
-              {formData.personal.phone && <span>📞 {formData.personal.phone}</span>}
-              {formData.personal.portfolio && <span>🌐 {formData.personal.portfolio}</span>}
-            </div>
+      <div id="resume-preview" className={styles.cvDocument} style={{ ...docBaseStyle, padding: '35px 40px', backgroundColor: '#fcfcfc' }}>
+        <div style={{ paddingBottom: '16px', borderBottom: `2px solid ${pColor}`, marginBottom: '22px' }}>
+          <h1 style={{ fontSize: '26pt', fontWeight: 800, color: '#0f172a', margin: '0 0 3px 0', fontFamily: headingFont }}>
+            {formData.personal.fullName || 'YOUR NAME'}
+          </h1>
+          <p style={{ fontSize: '12pt', fontWeight: 600, color: pColor, margin: '0 0 8px 0' }}>
+            {formData.personal.title || 'Professional Title'}
+          </p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 16px', fontSize: '8.5pt', color: '#64748b' }}>
+            {formData.personal.email && <span>✉ {formData.personal.email}</span>}
+            {formData.personal.phone && <span>📞 {formData.personal.phone}</span>}
+            {formData.personal.portfolio && <span>🌐 {formData.personal.portfolio}</span>}
           </div>
-        </header>
+        </div>
 
-        {renderSummary()}
-        {renderExperience(styles.onyxSectionTitle, true)}
-        {renderEducation(styles.onyxSectionTitle, true)}
-        {renderProjects(styles.onyxSectionTitle, true)}
-        {renderSkills()}
-        {renderCertifications()}
-        {renderLanguages()}
-        {renderReferences()}
+        {renderSummary('underline')}
+        {renderExperience('underline', true)}
+        {renderEducation('underline', true)}
+        {renderProjects('underline', true)}
+        {renderSkills('underline')}
+        {renderCertifications('underline')}
+        {renderLanguages('underline')}
+        {renderReferences('underline')}
       </div>
     );
   }
@@ -559,137 +700,166 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
   // =========================================================================
   if (selectedTemplate === 'azurill') {
     return (
-      <div id="resume-preview" className={`${styles.cvDocument} ${styles.tplAzurill}`} style={docStyle}>
-        <main className={styles.azurillMain}>
-          <h1 className={styles.pikachuName} style={headingStyle}>{formData.personal.fullName || 'YOUR NAME'}</h1>
-          <p className={styles.pikachuTitle}>{formData.personal.title || 'Professional Title'}</p>
-          {renderSummary(styles.pikachuSectionTitle)}
-          {renderExperience(styles.pikachuSectionTitle)}
-          {renderProjects(styles.pikachuSectionTitle)}
-          {renderReferences(styles.pikachuSectionTitle)}
-        </main>
+      <div
+        id="resume-preview"
+        className={styles.cvDocument}
+        style={{
+          ...docBaseStyle,
+          display: 'grid',
+          gridTemplateColumns: '67% 33%',
+          minHeight: '297mm',
+        }}
+      >
+        {/* Left Main Content */}
+        <div style={{ padding: '35px 28px', boxSizing: 'border-box', backgroundColor: '#ffffff' }}>
+          <h1 style={{ fontSize: '26pt', fontWeight: 800, color: '#0f172a', margin: '0 0 3px 0', fontFamily: headingFont }}>
+            {formData.personal.fullName || 'YOUR NAME'}
+          </h1>
+          <p style={{ fontSize: '13pt', fontWeight: 600, color: pColor, margin: '0 0 18px 0' }}>
+            {formData.personal.title || 'Professional Title'}
+          </p>
+          {renderSummary('underline')}
+          {renderExperience('underline')}
+          {renderProjects('underline')}
+          {renderReferences('underline')}
+        </div>
 
-        <aside className={styles.azurillSidebar}>
-          {formData.personal.picture && (
-            <img src={formData.personal.picture} alt="Avatar" className={styles.sidebarAvatar} />
-          )}
-          <div className={styles.sidebarSection}>
-            <div className={styles.sidebarTitle} style={headingStyle}>Contact</div>
-            {formData.personal.email && <div className={styles.sidebarContactItem}>{formData.personal.email}</div>}
-            {formData.personal.phone && <div className={styles.sidebarContactItem}>{formData.personal.phone}</div>}
-            {formData.personal.address && <div className={styles.sidebarContactItem}>{formData.personal.address}</div>}
+        {/* Right Sidebar */}
+        <div style={{ padding: '35px 20px', backgroundColor: '#f8fafc', borderLeft: '1px solid #e2e8f0', boxSizing: 'border-box' }}>
+          {renderAvatar(80, pColor)}
+          <div style={{ marginBottom: '20px' }}>
+            <div style={{ fontSize: '9.5pt', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#0f172a', borderBottom: `2px solid ${pColor}`, paddingBottom: '3px', marginBottom: '10px', fontFamily: headingFont }}>
+              Contact
+            </div>
+            {formData.personal.email && (
+              <div style={{ marginBottom: '8px', fontSize: '8.2pt' }}>
+                <div style={{ fontSize: '7pt', fontWeight: 700, textTransform: 'uppercase', color: '#94a3b8' }}>Email</div>
+                <div style={{ color: '#334155', wordBreak: 'break-all' }}>{formData.personal.email}</div>
+              </div>
+            )}
+            {formData.personal.phone && (
+              <div style={{ marginBottom: '8px', fontSize: '8.2pt' }}>
+                <div style={{ fontSize: '7pt', fontWeight: 700, textTransform: 'uppercase', color: '#94a3b8' }}>Phone</div>
+                <div style={{ color: '#334155' }}>{formData.personal.phone}</div>
+              </div>
+            )}
+            {formData.personal.address && (
+              <div style={{ marginBottom: '8px', fontSize: '8.2pt' }}>
+                <div style={{ fontSize: '7pt', fontWeight: 700, textTransform: 'uppercase', color: '#94a3b8' }}>Location</div>
+                <div style={{ color: '#334155' }}>{formData.personal.address}</div>
+              </div>
+            )}
           </div>
-          {renderEducation(styles.sidebarTitle)}
-          {renderSkills(styles.sidebarTitle)}
-          {renderCertifications(styles.sidebarTitle)}
-          {renderLanguages(styles.sidebarTitle)}
-        </aside>
+          {renderEducation('underline')}
+          {renderSkills('underline')}
+          {renderCertifications('underline')}
+          {renderLanguages('underline')}
+        </div>
       </div>
     );
   }
 
   // =========================================================================
-  // 8. CHIKORITA (Timeline Layout)
+  // 8. CHIKORITA (Timeline Flow)
   // =========================================================================
   if (selectedTemplate === 'chikorita') {
     return (
-      <div id="resume-preview" className={`${styles.cvDocument} ${styles.tplChikorita}`} style={docStyle}>
-        <header className={styles.onyxHeader}>
-          <div>
-            <h1 className={styles.onyxName} style={headingStyle}>{formData.personal.fullName || 'YOUR NAME'}</h1>
-            <p className={styles.onyxTitle}>{formData.personal.title || 'Professional Title'}</p>
-            <div className={styles.onyxContactList}>
-              {formData.personal.email && <span>✉ {formData.personal.email}</span>}
-              {formData.personal.phone && <span>📞 {formData.personal.phone}</span>}
-              {formData.personal.portfolio && <span>🌐 {formData.personal.portfolio}</span>}
-            </div>
+      <div id="resume-preview" className={styles.cvDocument} style={{ ...docBaseStyle, padding: '35px 40px' }}>
+        <div style={{ paddingBottom: '16px', borderBottom: '2px solid #e2e8f0', marginBottom: '22px' }}>
+          <h1 style={{ fontSize: '26pt', fontWeight: 800, color: '#0f172a', margin: '0 0 3px 0', fontFamily: headingFont }}>
+            {formData.personal.fullName || 'YOUR NAME'}
+          </h1>
+          <p style={{ fontSize: '13pt', fontWeight: 600, color: pColor, margin: '0 0 8px 0' }}>
+            {formData.personal.title || 'Professional Title'}
+          </p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 16px', fontSize: '8.5pt', color: '#64748b' }}>
+            {formData.personal.email && <span>✉ {formData.personal.email}</span>}
+            {formData.personal.phone && <span>📞 {formData.personal.phone}</span>}
+            {formData.personal.portfolio && <span>🌐 {formData.personal.portfolio}</span>}
           </div>
-        </header>
+        </div>
 
-        {renderSummary()}
-        
+        {renderSummary('underline')}
+
+        {/* Timeline Experience */}
         {formData.experience && formData.experience.length > 0 && (
-          <div className={styles.onyxSection}>
-            <div className={styles.onyxSectionTitle} style={headingStyle}>Experience</div>
-            <div className={styles.timelineWrap}>
+          <div style={{ marginBottom: '18px' }}>
+            {renderSectionTitle('Experience', 'underline')}
+            <div style={{ position: 'relative', paddingLeft: '22px' }}>
+              <div style={{ position: 'absolute', left: '6px', top: '8px', bottom: '8px', width: '2px', backgroundColor: pColor, opacity: 0.5 }} />
               {formData.experience.map(exp => (
-                <div key={exp.id} className={styles.timelineItem}>
-                  <div className={styles.timelineDot} />
-                  <div className={styles.itemHeader}>
-                    <span>{exp.title}</span>
-                    <span className={styles.itemDate}>{exp.dates}</span>
-                  </div>
-                  <div className={styles.itemSubHeader}>
-                    <span>{exp.company}</span>
-                    {exp.location && <span>{exp.location}</span>}
-                  </div>
-                  {exp.responsibilities && <div className={styles.itemDesc}>{exp.responsibilities}</div>}
+                <div key={exp.id} style={{ position: 'relative', marginBottom: '14px' }}>
+                  <div style={{ position: 'absolute', left: '-22px', top: '4px', width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#fff', border: `2.5px solid ${pColor}`, boxSizing: 'border-box' }} />
+                  {renderItemHeader(exp.title, exp.company, exp.dates, exp.location)}
+                  {exp.responsibilities && (
+                    <div style={{ fontSize: '8.8pt', lineHeight: 1.5, color: '#475569', marginTop: '3px' }}>{exp.responsibilities}</div>
+                  )}
                 </div>
               ))}
             </div>
           </div>
         )}
 
-        {renderEducation()}
-        {renderProjects()}
-        {renderSkills()}
-        {renderCertifications()}
-        {renderLanguages()}
-        {renderReferences()}
+        {renderEducation('underline')}
+        {renderProjects('underline')}
+        {renderSkills('underline')}
+        {renderCertifications('underline')}
+        {renderLanguages('underline')}
+        {renderReferences('underline')}
       </div>
     );
   }
 
   // =========================================================================
-  // 9. RHYHORN (Bold Block Header)
+  // 9. RHYHORN (Bold Block)
   // =========================================================================
   if (selectedTemplate === 'rhyhorn') {
     return (
-      <div id="resume-preview" className={`${styles.cvDocument} ${styles.tplRhyhorn}`} style={docStyle}>
-        <div className={styles.rhyhornHeaderBlock}>
+      <div id="resume-preview" className={styles.cvDocument} style={docBaseStyle}>
+        <div style={{ display: 'grid', gridTemplateColumns: '60% 40%', backgroundColor: pColor, color: '#ffffff', padding: '32px 38px' }}>
           <div>
-            <h1 style={{ fontSize: '26pt', fontWeight: 800, margin: '0 0 4px 0', ...headingStyle }}>{formData.personal.fullName || 'YOUR NAME'}</h1>
+            <h1 style={{ fontSize: '26pt', fontWeight: 800, margin: '0 0 3px 0', color: '#fff', fontFamily: headingFont }}>
+              {formData.personal.fullName || 'YOUR NAME'}
+            </h1>
             <p style={{ fontSize: '13pt', opacity: 0.9, margin: 0 }}>{formData.personal.title || 'Professional Title'}</p>
           </div>
-          <div style={{ background: 'rgba(255,255,255,0.15)', padding: '14px', borderRadius: '8px', fontSize: '8.5pt', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <div style={{ backgroundColor: 'rgba(255,255,255,0.15)', padding: '12px', borderRadius: '6px', fontSize: '8.2pt', display: 'flex', flexDirection: 'column', gap: '4px' }}>
             {formData.personal.email && <div>✉ {formData.personal.email}</div>}
             {formData.personal.phone && <div>📞 {formData.personal.phone}</div>}
             {formData.personal.portfolio && <div>🌐 {formData.personal.portfolio}</div>}
           </div>
         </div>
 
-        <div className={styles.rhyhornBody}>
-          {renderSummary(styles.rhyhornSectionTitle)}
-          {renderExperience(styles.rhyhornSectionTitle)}
-          {renderEducation(styles.rhyhornSectionTitle)}
-          {renderProjects(styles.rhyhornSectionTitle)}
-          {renderSkills(styles.rhyhornSectionTitle)}
-          {renderCertifications(styles.rhyhornSectionTitle)}
-          {renderLanguages(styles.rhyhornSectionTitle)}
-          {renderReferences(styles.rhyhornSectionTitle)}
+        <div style={{ padding: '28px 38px' }}>
+          {renderSummary('bold')}
+          {renderExperience('bold')}
+          {renderEducation('bold')}
+          {renderProjects('bold')}
+          {renderSkills('bold')}
+          {renderCertifications('bold')}
+          {renderLanguages('bold')}
+          {renderReferences('bold')}
         </div>
       </div>
     );
   }
 
   // =========================================================================
-  // 10. DITTO (Soft Rounded Modern)
+  // 10. DITTO (Soft Rounded Pill)
   // =========================================================================
   if (selectedTemplate === 'ditto') {
     return (
-      <div id="resume-preview" className={`${styles.cvDocument} ${styles.tplDitto}`} style={docStyle}>
-        <div className={styles.dittoHeaderCard}>
-          {formData.personal.picture ? (
-            <img src={formData.personal.picture} alt="Avatar" style={{ width: '70px', height: '70px', borderRadius: '50%', objectFit: 'cover' }} />
-          ) : (
-            <div style={{ width: '70px', height: '70px', borderRadius: '50%', background: pColor, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20pt', fontWeight: 800 }}>
-              {(formData.personal.fullName || 'U').charAt(0)}
-            </div>
-          )}
+      <div id="resume-preview" className={styles.cvDocument} style={{ ...docBaseStyle, padding: '35px 40px' }}>
+        <div style={{ backgroundColor: `${pColor}12`, border: `1px solid ${pColor}35`, borderRadius: '16px', padding: '22px', marginBottom: '22px', display: 'flex', alignItems: 'center', gap: '20px' }}>
+          {renderAvatar(75, pColor)}
           <div>
-            <h1 className={styles.onyxName} style={headingStyle}>{formData.personal.fullName || 'YOUR NAME'}</h1>
-            <p className={styles.onyxTitle}>{formData.personal.title || 'Professional Title'}</p>
-            <div className={styles.onyxContactList}>
+            <h1 style={{ fontSize: '25pt', fontWeight: 800, color: '#0f172a', margin: '0 0 3px 0', fontFamily: headingFont }}>
+              {formData.personal.fullName || 'YOUR NAME'}
+            </h1>
+            <p style={{ fontSize: '12pt', fontWeight: 600, color: pColor, margin: '0 0 8px 0' }}>
+              {formData.personal.title || 'Professional Title'}
+            </p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 14px', fontSize: '8.5pt', color: '#64748b' }}>
               {formData.personal.email && <span>{formData.personal.email}</span>}
               {formData.personal.phone && <span>{formData.personal.phone}</span>}
               {formData.personal.portfolio && <span>{formData.personal.portfolio}</span>}
@@ -697,14 +867,14 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
           </div>
         </div>
 
-        {renderSummary(styles.dittoPillTitle)}
-        {renderExperience(styles.dittoPillTitle)}
-        {renderEducation(styles.dittoPillTitle)}
-        {renderProjects(styles.dittoPillTitle)}
-        {renderSkills(styles.dittoPillTitle)}
-        {renderCertifications(styles.dittoPillTitle)}
-        {renderLanguages(styles.dittoPillTitle)}
-        {renderReferences(styles.dittoPillTitle)}
+        {renderSummary('pill')}
+        {renderExperience('pill')}
+        {renderEducation('pill')}
+        {renderProjects('pill')}
+        {renderSkills('pill')}
+        {renderCertifications('pill')}
+        {renderLanguages('pill')}
+        {renderReferences('pill')}
       </div>
     );
   }
@@ -714,26 +884,28 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
   // =========================================================================
   if (selectedTemplate === 'bronzor') {
     return (
-      <div id="resume-preview" className={`${styles.cvDocument} ${styles.tplBronzor}`} style={docStyle}>
-        <div className={styles.bronzorTerminalHeader}>
+      <div id="resume-preview" className={styles.cvDocument} style={{ ...docBaseStyle, padding: '30px 40px' }}>
+        <div style={{ backgroundColor: '#0f172a', color: '#38bdf8', padding: '20px 24px', borderRadius: '8px', fontFamily: 'monospace', marginBottom: '22px' }}>
           <div style={{ opacity: 0.6, fontSize: '8pt', marginBottom: '4px' }}>{"// DEVELOPER_PROFILE_INITIALIZED"}</div>
-          <h1 style={{ fontSize: '22pt', margin: '0 0 2px 0', color: '#fff', ...headingStyle }}>{formData.personal.fullName || 'YOUR NAME'}</h1>
+          <h1 style={{ fontSize: '22pt', margin: '0 0 2px 0', color: '#fff', fontFamily: headingFont }}>
+            {formData.personal.fullName || 'YOUR NAME'}
+          </h1>
           <p style={{ fontSize: '11pt', color: '#38bdf8', margin: '0 0 8px 0' }}>{`> ${formData.personal.title || 'Professional Title'}`}</p>
-          <div style={{ fontSize: '8.5pt', color: '#94a3b8', display: 'flex', gap: '16px' }}>
+          <div style={{ fontSize: '8.5pt', color: '#94a3b8', display: 'flex', flexWrap: 'wrap', gap: '14px' }}>
             {formData.personal.email && <span>{`email: "${formData.personal.email}"`}</span>}
             {formData.personal.phone && <span>{`phone: "${formData.personal.phone}"`}</span>}
             {formData.personal.portfolio && <span>{`web: "${formData.personal.portfolio}"`}</span>}
           </div>
         </div>
 
-        {renderSummary(styles.bronzorSectionTitle)}
-        {renderExperience(styles.bronzorSectionTitle)}
-        {renderEducation(styles.bronzorSectionTitle)}
-        {renderProjects(styles.bronzorSectionTitle)}
-        {renderSkills(styles.bronzorSectionTitle)}
-        {renderCertifications(styles.bronzorSectionTitle)}
-        {renderLanguages(styles.bronzorSectionTitle)}
-        {renderReferences(styles.bronzorSectionTitle)}
+        {renderSummary('terminal')}
+        {renderExperience('terminal')}
+        {renderEducation('terminal')}
+        {renderProjects('terminal')}
+        {renderSkills('terminal')}
+        {renderCertifications('terminal')}
+        {renderLanguages('terminal')}
+        {renderReferences('terminal')}
       </div>
     );
   }
@@ -743,11 +915,15 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
   // =========================================================================
   if (selectedTemplate === 'leafish') {
     return (
-      <div id="resume-preview" className={`${styles.cvDocument} ${styles.tplLeafish}`} style={docStyle}>
-        <div className={styles.leafishDoubleHeader}>
+      <div id="resume-preview" className={styles.cvDocument} style={{ ...docBaseStyle, padding: '35px 45px' }}>
+        <div style={{ borderTop: `3px solid ${pColor}`, borderBottom: '1px solid #cbd5e1', padding: '16px 0', marginBottom: '22px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
           <div>
-            <h1 className={styles.onyxName} style={{ fontFamily: 'Georgia, serif', ...headingStyle }}>{formData.personal.fullName || 'YOUR NAME'}</h1>
-            <p className={styles.onyxTitle} style={{ fontStyle: 'italic' }}>{formData.personal.title || 'Professional Title'}</p>
+            <h1 style={{ fontSize: '25pt', fontWeight: 800, color: '#0f172a', margin: '0 0 3px 0', fontFamily: 'Georgia, serif' }}>
+              {formData.personal.fullName || 'YOUR NAME'}
+            </h1>
+            <p style={{ fontSize: '12pt', fontStyle: 'italic', color: pColor, margin: 0 }}>
+              {formData.personal.title || 'Professional Title'}
+            </p>
           </div>
           <div style={{ textAlign: 'right', fontSize: '8.5pt', color: '#64748b' }}>
             {formData.personal.email && <div>{formData.personal.email}</div>}
@@ -756,14 +932,14 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
           </div>
         </div>
 
-        {renderSummary()}
-        {renderExperience()}
-        {renderEducation()}
-        {renderProjects()}
-        {renderSkills()}
-        {renderCertifications()}
-        {renderLanguages()}
-        {renderReferences()}
+        {renderSummary('underline')}
+        {renderExperience('underline')}
+        {renderEducation('underline')}
+        {renderProjects('underline')}
+        {renderSkills('underline')}
+        {renderCertifications('underline')}
+        {renderLanguages('underline')}
+        {renderReferences('underline')}
       </div>
     );
   }
@@ -772,35 +948,35 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
   // 13. DITGAR (Hybrid 3-Tier Grid)
   // =========================================================================
   return (
-    <div id="resume-preview" className={`${styles.cvDocument} ${styles.tplDitgar}`} style={docStyle}>
-      <header className={styles.onyxHeader}>
-        <div>
-          <h1 className={styles.onyxName} style={headingStyle}>{formData.personal.fullName || 'YOUR NAME'}</h1>
-          <p className={styles.onyxTitle}>{formData.personal.title || 'Professional Title'}</p>
-          <div className={styles.onyxContactList}>
-            {formData.personal.email && <span>✉ {formData.personal.email}</span>}
-            {formData.personal.phone && <span>📞 {formData.personal.phone}</span>}
-            {formData.personal.portfolio && <span>🌐 {formData.personal.portfolio}</span>}
-          </div>
-        </div>
-      </header>
-
-      {renderSummary()}
-
-      <div className={styles.ditgarGrid}>
-        <div>
-          {renderExperience()}
-        </div>
-        <div>
-          {renderEducation()}
-          {renderCertifications()}
+    <div id="resume-preview" className={styles.cvDocument} style={{ ...docBaseStyle, padding: '32px 38px', borderTop: `5px solid ${pColor}` }}>
+      <div style={{ paddingBottom: '16px', borderBottom: '2px solid #e2e8f0', marginBottom: '20px' }}>
+        <h1 style={{ fontSize: '25pt', fontWeight: 800, color: '#0f172a', margin: '0 0 3px 0', fontFamily: headingFont }}>
+          {formData.personal.fullName || 'YOUR NAME'}
+        </h1>
+        <p style={{ fontSize: '12pt', fontWeight: 600, color: pColor, margin: '0 0 8px 0' }}>
+          {formData.personal.title || 'Professional Title'}
+        </p>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 16px', fontSize: '8.5pt', color: '#64748b' }}>
+          {formData.personal.email && <span>✉ {formData.personal.email}</span>}
+          {formData.personal.phone && <span>📞 {formData.personal.phone}</span>}
+          {formData.personal.portfolio && <span>🌐 {formData.personal.portfolio}</span>}
         </div>
       </div>
 
-      {renderProjects()}
-      {renderSkills()}
-      {renderLanguages()}
-      {renderReferences()}
+      {renderSummary('underline')}
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '22px' }}>
+        <div>{renderExperience('underline')}</div>
+        <div>
+          {renderEducation('underline')}
+          {renderCertifications('underline')}
+        </div>
+      </div>
+
+      {renderProjects('underline')}
+      {renderSkills('underline')}
+      {renderLanguages('underline')}
+      {renderReferences('underline')}
     </div>
   );
 };
