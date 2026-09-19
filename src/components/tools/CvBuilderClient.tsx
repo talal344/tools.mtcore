@@ -211,6 +211,7 @@ const CvBuilderClient = () => {
     if (history.length === 0) {
       pushHistory(formData);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   React.useEffect(() => {
@@ -229,7 +230,6 @@ const CvBuilderClient = () => {
       }
       link.href = `https://fonts.googleapis.com/css2?${fontsToLoad.map(f => `family=${f.replace(/ /g, '+')}:wght@400;700`).join('&')}&display=swap`;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [typography.bodyFont, typography.headingFont]);
 
   const SECTIONS = [
@@ -353,9 +353,23 @@ const CvBuilderClient = () => {
 
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
-      const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+      const totalImgHeight = (canvas.height * pdfWidth) / canvas.width;
 
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, Math.min(imgHeight, pdfHeight));
+      let heightLeft = totalImgHeight;
+      let position = 0;
+
+      // Page 1
+      pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, totalImgHeight);
+      heightLeft -= pdfHeight;
+
+      // Subsequent pages if CV flows over 1 page
+      while (heightLeft > 2) {
+        position -= pdfHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, totalImgHeight);
+        heightLeft -= pdfHeight;
+      }
+
       const filename = `${(formData.personal.fullName || resumeTitle || 'Resume').trim().replace(/\s+/g, '_')}_CV.pdf`;
       pdf.save(filename);
     } catch (err) { 
@@ -382,7 +396,7 @@ const CvBuilderClient = () => {
           <style>
             @page { size: A4; margin: 0; }
             body { margin: 0; padding: 0; background: #fff !important; }
-            #resume-preview { box-shadow: none !important; margin: 0 auto !important; width: 210mm !important; min-height: 297mm !important; }
+            #resume-preview { box-shadow: none !important; margin: 0 auto !important; width: 210mm !important; min-height: 297mm !important; height: auto !important; overflow: visible !important; }
           </style>
         </head>
         <body>
@@ -607,11 +621,13 @@ const CvBuilderClient = () => {
             {activeSection === 'awards' && (
               <div>
                 {formData.awards.map((award, idx) => (
-                  <div key={idx} className={styles.listItem}>
+                  <div key={award.id || idx} className={styles.listItem}>
                     <button className={styles.removeBtn} onClick={() => { const n = [...formData.awards]; n.splice(idx, 1); setFormData({...formData, awards: n}) }}>×</button>
                     <div className={styles.formGrid}>
                       <div className={styles.formGroup}><label className={styles.label}>Award Title</label><input className={styles.input} value={award.title} onChange={e => { const n = [...formData.awards]; n[idx].title = e.target.value; setFormData({...formData, awards: n})}} /></div>
-                      <div className={styles.formGroup}><label className={styles.label}>Awarding Org</label><input className={styles.input} value={award.date} onChange={e => { const n = [...formData.awards]; n[idx].date = e.target.value; setFormData({...formData, awards: n})}} /></div>
+                      <div className={styles.formGroup}><label className={styles.label}>Awarding Org</label><input className={styles.input} value={award.awarder} onChange={e => { const n = [...formData.awards]; n[idx].awarder = e.target.value; setFormData({...formData, awards: n})}} /></div>
+                      <div className={styles.formGroup}><label className={styles.label}>Year / Date</label><input className={styles.input} value={award.date} onChange={e => { const n = [...formData.awards]; n[idx].date = e.target.value; setFormData({...formData, awards: n})}} /></div>
+                      <div className={styles.formGroupFull}><label className={styles.label}>Summary / Description</label><input className={styles.input} placeholder="Brief description of the award..." value={award.summary || ''} onChange={e => { const n = [...formData.awards]; n[idx].summary = e.target.value; setFormData({...formData, awards: n})}} /></div>
                     </div>
                   </div>
                 ))}
@@ -627,6 +643,7 @@ const CvBuilderClient = () => {
                     <div className={styles.formGrid}>
                       <div className={styles.formGroup}><label className={styles.label}>Certification Name</label><input className={styles.input} value={cert.name} onChange={e => { const n = [...formData.certifications]; n[idx].name = e.target.value; setFormData({...formData, certifications: n})}} /></div>
                       <div className={styles.formGroup}><label className={styles.label}>Issuer</label><input className={styles.input} value={cert.org} onChange={e => { const n = [...formData.certifications]; n[idx].org = e.target.value; setFormData({...formData, certifications: n})}} /></div>
+                      <div className={styles.formGroupFull}><label className={styles.label}>Year</label><input className={styles.input} value={cert.year} onChange={e => { const n = [...formData.certifications]; n[idx].year = e.target.value; setFormData({...formData, certifications: n})}} /></div>
                     </div>
                   </div>
                 ))}
@@ -643,6 +660,7 @@ const CvBuilderClient = () => {
                       <div className={styles.formGroupFull}><label className={styles.label}>Publication Title</label><input className={styles.input} value={pub.name} onChange={e => { const n = [...formData.publications]; n[idx].name = e.target.value; setFormData({...formData, publications: n})}} /></div>
                       <div className={styles.formGroup}><label className={styles.label}>Publisher</label><input className={styles.input} value={pub.publisher} onChange={e => { const n = [...formData.publications]; n[idx].publisher = e.target.value; setFormData({...formData, publications: n})}} /></div>
                       <div className={styles.formGroup}><label className={styles.label}>Year</label><input className={styles.input} value={pub.date} onChange={e => { const n = [...formData.publications]; n[idx].date = e.target.value; setFormData({...formData, publications: n})}} /></div>
+                      <div className={styles.formGroupFull}><label className={styles.label}>Link / URL</label><input className={styles.input} value={pub.url} onChange={e => { const n = [...formData.publications]; n[idx].url = e.target.value; setFormData({...formData, publications: n})}} /></div>
                     </div>
                   </div>
                 ))}
@@ -658,6 +676,9 @@ const CvBuilderClient = () => {
                     <div className={styles.formGrid}>
                       <div className={styles.formGroup}><label className={styles.label}>Organization</label><input className={styles.input} value={v.organization} onChange={e => { const n = [...formData.volunteer]; n[idx].organization = e.target.value; setFormData({...formData, volunteer: n})}} /></div>
                       <div className={styles.formGroup}><label className={styles.label}>Role</label><input className={styles.input} value={v.position} onChange={e => { const n = [...formData.volunteer]; n[idx].position = e.target.value; setFormData({...formData, volunteer: n})}} /></div>
+                      <div className={styles.formGroup}><label className={styles.label}>Start Date</label><input className={styles.input} value={v.startDate} onChange={e => { const n = [...formData.volunteer]; n[idx].startDate = e.target.value; setFormData({...formData, volunteer: n})}} /></div>
+                      <div className={styles.formGroup}><label className={styles.label}>End Date</label><input className={styles.input} value={v.endDate} onChange={e => { const n = [...formData.volunteer]; n[idx].endDate = e.target.value; setFormData({...formData, volunteer: n})}} /></div>
+                      <div className={styles.formGroupFull}><label className={styles.label}>Summary / Impact</label><textarea className={styles.textarea} value={v.summary} onChange={e => { const n = [...formData.volunteer]; n[idx].summary = e.target.value; setFormData({...formData, volunteer: n})}} /></div>
                     </div>
                   </div>
                 ))}

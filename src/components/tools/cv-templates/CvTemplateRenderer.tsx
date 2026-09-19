@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 import React from 'react';
 import styles from './CvTemplates.module.css';
 
@@ -125,11 +126,12 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
     backgroundColor: bgColor,
     width: '210mm',
     minHeight: '297mm',
+    height: 'auto',
     boxSizing: 'border-box',
     margin: '0 auto',
     boxShadow: '0 20px 40px rgba(0, 0, 0, 0.45)',
     position: 'relative',
-    overflow: 'hidden',
+    overflow: 'visible',
   };
 
   const headingFont = `${typography.headingFont}, -apple-system, BlinkMacSystemFont, sans-serif`;
@@ -145,7 +147,7 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
 
   // Reusable Avatar Renderer
   const renderAvatar = (size = 80, borderColor = pColor) => {
-    if (formData.personal.picture) {
+    if (formData.personal?.picture) {
       return (
         <img
           src={formData.personal.picture}
@@ -187,7 +189,7 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
           boxShadow: '0 4px 10px rgba(0,0,0,0.1)',
         }}
       >
-        {(formData.personal.fullName || 'A').charAt(0).toUpperCase()}
+        {(formData.personal?.fullName || 'A').charAt(0).toUpperCase()}
       </div>
     );
   };
@@ -238,7 +240,7 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
     );
   };
 
-  // Sections
+  // Section Renderers
   const renderSummary = (variant: 'underline' | 'pill' | 'terminal' | 'bold' = 'underline') => {
     if (!formData.aiSummary) return null;
     return (
@@ -303,14 +305,14 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
         {renderSectionTitle('Projects', variant)}
         {formData.projects.map((proj, i) => (
           <div
-            key={i}
+            key={proj.id || i}
             style={
               isBoxed
                 ? { backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderLeft: `4px solid ${pColor}`, borderRadius: '6px', padding: '12px 14px', marginBottom: '10px' }
                 : { marginBottom: '10px' }
             }
           >
-            {renderItemHeader(proj.name, undefined, undefined, proj.url)}
+            {renderItemHeader(proj.name, undefined, proj.date, proj.url)}
             {proj.description && (
               <div style={{ fontSize: '8.8pt', lineHeight: 1.5, color: '#475569', marginTop: '3px' }}>{proj.description}</div>
             )}
@@ -353,14 +355,99 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
     );
   };
 
-  const renderCertifications = (variant: 'underline' | 'pill' | 'terminal' | 'bold' = 'underline') => {
+  const renderCertifications = (variant: 'underline' | 'pill' | 'terminal' | 'bold' = 'underline', isBoxed = false) => {
     if (!formData.certifications || formData.certifications.length === 0) return null;
     return (
       <div style={{ marginBottom: '18px' }}>
         {renderSectionTitle('Certifications', variant)}
         {formData.certifications.map(c => (
-          <div key={c.id} style={{ marginBottom: '8px' }}>
+          <div
+            key={c.id}
+            style={
+              isBoxed
+                ? { backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderLeft: `4px solid ${pColor}`, borderRadius: '6px', padding: '10px 14px', marginBottom: '8px' }
+                : { marginBottom: '8px' }
+            }
+          >
             {renderItemHeader(c.name, c.org, c.year)}
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  const renderAwards = (variant: 'underline' | 'pill' | 'terminal' | 'bold' = 'underline', isBoxed = false) => {
+    if (!formData.awards || formData.awards.length === 0) return null;
+    return (
+      <div style={{ marginBottom: '18px' }}>
+        {renderSectionTitle('Honors & Awards', variant)}
+        {formData.awards.map(a => (
+          <div
+            key={a.id}
+            style={
+              isBoxed
+                ? { backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderLeft: `4px solid ${pColor}`, borderRadius: '6px', padding: '10px 14px', marginBottom: '8px' }
+                : { marginBottom: '8px' }
+            }
+          >
+            {renderItemHeader(a.title, a.awarder, a.date)}
+            {a.summary && (
+              <div style={{ fontSize: '8.8pt', lineHeight: 1.5, color: '#475569', marginTop: '3px' }}>
+                {a.summary}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  const renderPublications = (variant: 'underline' | 'pill' | 'terminal' | 'bold' = 'underline', isBoxed = false) => {
+    if (!formData.publications || formData.publications.length === 0) return null;
+    return (
+      <div style={{ marginBottom: '18px' }}>
+        {renderSectionTitle('Publications', variant)}
+        {formData.publications.map(pub => (
+          <div
+            key={pub.id}
+            style={
+              isBoxed
+                ? { backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderLeft: `4px solid ${pColor}`, borderRadius: '6px', padding: '10px 14px', marginBottom: '8px' }
+                : { marginBottom: '8px' }
+            }
+          >
+            {renderItemHeader(pub.name, pub.publisher, pub.date, pub.url)}
+            {pub.summary && (
+              <div style={{ fontSize: '8.8pt', lineHeight: 1.5, color: '#475569', marginTop: '3px' }}>
+                {pub.summary}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  const renderVolunteer = (variant: 'underline' | 'pill' | 'terminal' | 'bold' = 'underline', isBoxed = false) => {
+    if (!formData.volunteer || formData.volunteer.length === 0) return null;
+    return (
+      <div style={{ marginBottom: '18px' }}>
+        {renderSectionTitle('Volunteer Experience', variant)}
+        {formData.volunteer.map(v => (
+          <div
+            key={v.id}
+            style={
+              isBoxed
+                ? { backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderLeft: `4px solid ${pColor}`, borderRadius: '6px', padding: '10px 14px', marginBottom: '8px' }
+                : { marginBottom: '8px' }
+            }
+          >
+            {renderItemHeader(v.position || 'Volunteer', v.organization, [v.startDate, v.endDate].filter(Boolean).join(' - ') || undefined, v.url)}
+            {v.summary && (
+              <div style={{ fontSize: '8.8pt', lineHeight: 1.5, color: '#475569', marginTop: '3px' }}>
+                {v.summary}
+              </div>
+            )}
           </div>
         ))}
       </div>
@@ -383,12 +470,57 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
     );
   };
 
+  const renderInterests = (variant: 'underline' | 'pill' | 'terminal' | 'bold' = 'underline') => {
+    if (!formData.interests || formData.interests.length === 0) return null;
+    return (
+      <div style={{ marginBottom: '18px' }}>
+        {renderSectionTitle('Interests', variant)}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+          {formData.interests.map((int, i) => (
+            <span
+              key={int.id || i}
+              style={{
+                backgroundColor: '#f1f5f9',
+                color: '#334155',
+                border: '1px solid #cbd5e1',
+                padding: '3px 9px',
+                borderRadius: '12px',
+                fontSize: '8pt',
+                fontWeight: 500,
+              }}
+            >
+              {int.name}
+            </span>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  const renderProfiles = (variant: 'underline' | 'pill' | 'terminal' | 'bold' = 'underline') => {
+    if (!formData.profiles || formData.profiles.length === 0) return null;
+    return (
+      <div style={{ marginBottom: '18px' }}>
+        {renderSectionTitle('Profiles', variant)}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+          {formData.profiles.map(p => (
+            <span key={p.id} style={{ backgroundColor: '#f8fafc', color: '#334155', border: '1px solid #e2e8f0', padding: '3px 8px', borderRadius: '4px', fontSize: '8pt' }}>
+              <strong style={{ color: pColor }}>{p.network}:</strong> {p.username || p.url}
+            </span>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   const renderReferences = (variant: 'underline' | 'pill' | 'terminal' | 'bold' = 'underline') => {
-    if (!formData.references) return null;
+    if (!formData.references || formData.references.trim() === '') return null;
     return (
       <div style={{ marginBottom: '18px' }}>
         {renderSectionTitle('References', variant)}
-        <div style={{ fontSize: '8.8pt', fontStyle: 'italic', color: '#64748b' }}>{formData.references}</div>
+        <div style={{ fontSize: '9pt', lineHeight: 1.6, color: '#475569', whiteSpace: 'pre-line' }}>
+          {formData.references}
+        </div>
       </div>
     );
   };
@@ -402,17 +534,17 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', paddingBottom: '18px', borderBottom: '2px solid #e2e8f0', marginBottom: '22px' }}>
           <div>
             <h1 style={{ fontSize: '26pt', fontWeight: 800, color: '#0f172a', margin: '0 0 4px 0', lineHeight: 1.1, fontFamily: headingFont }}>
-              {formData.personal.fullName || 'YOUR NAME'}
+              {formData.personal?.fullName || 'YOUR NAME'}
             </h1>
             <p style={{ fontSize: '13pt', fontWeight: 600, color: pColor, margin: '0 0 10px 0' }}>
-              {formData.personal.title || 'Professional Title'}
+              {formData.personal?.title || 'Professional Title'}
             </p>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 16px', fontSize: '8.5pt', color: '#64748b' }}>
-              {formData.personal.email && <span>✉ {formData.personal.email}</span>}
-              {formData.personal.phone && <span>📞 {formData.personal.phone}</span>}
-              {formData.personal.address && <span>📍 {formData.personal.address}</span>}
-              {formData.personal.portfolio && <span>🌐 {formData.personal.portfolio}</span>}
-              {formData.personal.linkedin && <span>💼 {formData.personal.linkedin}</span>}
+              {formData.personal?.email && <span>✉ {formData.personal.email}</span>}
+              {formData.personal?.phone && <span>📞 {formData.personal.phone}</span>}
+              {formData.personal?.address && <span>📍 {formData.personal.address}</span>}
+              {formData.personal?.portfolio && <span>🌐 {formData.personal.portfolio}</span>}
+              {formData.personal?.linkedin && <span>💼 {formData.personal.linkedin}</span>}
             </div>
           </div>
           {renderAvatar(75, pColor)}
@@ -424,7 +556,12 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
         {renderProjects('underline')}
         {renderSkills('underline')}
         {renderCertifications('underline')}
+        {renderAwards('underline')}
+        {renderPublications('underline')}
+        {renderVolunteer('underline')}
         {renderLanguages('underline')}
+        {renderInterests('underline')}
+        {renderProfiles('underline')}
         {renderReferences('underline')}
       </div>
     );
@@ -442,7 +579,6 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
           ...docBaseStyle,
           display: 'grid',
           gridTemplateColumns: '32% 68%',
-          minHeight: '297mm',
         }}
       >
         {/* Left Sidebar */}
@@ -461,33 +597,39 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
             <div style={{ fontSize: '9.5pt', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#0f172a', borderBottom: `2px solid ${pColor}`, paddingBottom: '3px', marginBottom: '10px', fontFamily: headingFont }}>
               Contact
             </div>
-            {formData.personal.email && (
+            {formData.personal?.email && (
               <div style={{ marginBottom: '8px', fontSize: '8.2pt' }}>
                 <div style={{ fontSize: '7pt', fontWeight: 700, textTransform: 'uppercase', color: '#94a3b8' }}>Email</div>
                 <div style={{ color: '#334155', wordBreak: 'break-all' }}>{formData.personal.email}</div>
               </div>
             )}
-            {formData.personal.phone && (
+            {formData.personal?.phone && (
               <div style={{ marginBottom: '8px', fontSize: '8.2pt' }}>
                 <div style={{ fontSize: '7pt', fontWeight: 700, textTransform: 'uppercase', color: '#94a3b8' }}>Phone</div>
                 <div style={{ color: '#334155' }}>{formData.personal.phone}</div>
               </div>
             )}
-            {formData.personal.address && (
+            {formData.personal?.address && (
               <div style={{ marginBottom: '8px', fontSize: '8.2pt' }}>
                 <div style={{ fontSize: '7pt', fontWeight: 700, textTransform: 'uppercase', color: '#94a3b8' }}>Location</div>
                 <div style={{ color: '#334155' }}>{formData.personal.address}</div>
               </div>
             )}
-            {formData.personal.portfolio && (
+            {formData.personal?.portfolio && (
               <div style={{ marginBottom: '8px', fontSize: '8.2pt' }}>
                 <div style={{ fontSize: '7pt', fontWeight: 700, textTransform: 'uppercase', color: '#94a3b8' }}>Portfolio</div>
                 <div style={{ color: '#334155', wordBreak: 'break-all' }}>{formData.personal.portfolio}</div>
               </div>
             )}
+            {formData.personal?.linkedin && (
+              <div style={{ marginBottom: '8px', fontSize: '8.2pt' }}>
+                <div style={{ fontSize: '7pt', fontWeight: 700, textTransform: 'uppercase', color: '#94a3b8' }}>LinkedIn</div>
+                <div style={{ color: '#334155', wordBreak: 'break-all' }}>{formData.personal.linkedin}</div>
+              </div>
+            )}
           </div>
 
-          {/* Sidebar Skills with Level Bars */}
+          {/* Sidebar Skills */}
           {techSkills.length > 0 && (
             <div style={{ marginBottom: '22px' }}>
               <div style={{ fontSize: '9.5pt', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#0f172a', borderBottom: `2px solid ${pColor}`, paddingBottom: '3px', marginBottom: '10px', fontFamily: headingFont }}>
@@ -499,7 +641,7 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
                     <div style={{ display: 'flex', justifyContent: 'space-between', color: '#334155', fontWeight: 600, marginBottom: '2px' }}>
                       <span>{s}</span>
                     </div>
-                    <div style={{ height: '4px', backgroundColor: '#e2e8f0', borderRadius: '2px', overflow: 'hidden' }}>
+                    <div style={{ height: '4px', backgroundColor: '#e2e8f0', borderRadius: '2px' }}>
                       <div style={{ height: '100%', width: `${85 - (idx % 4) * 6}%`, backgroundColor: pColor, borderRadius: '2px' }} />
                     </div>
                   </div>
@@ -508,25 +650,28 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
             </div>
           )}
 
-          {/* Certifications in Sidebar */}
           {renderCertifications('underline')}
-          {/* Languages in Sidebar */}
           {renderLanguages('underline')}
+          {renderInterests('underline')}
+          {renderProfiles('underline')}
         </div>
 
         {/* Right Main Column */}
         <div style={{ padding: '35px 30px', boxSizing: 'border-box', backgroundColor: '#ffffff' }}>
           <h1 style={{ fontSize: '26pt', fontWeight: 800, color: '#0f172a', margin: '0 0 3px 0', lineHeight: 1.1, fontFamily: headingFont }}>
-            {formData.personal.fullName || 'YOUR NAME'}
+            {formData.personal?.fullName || 'YOUR NAME'}
           </h1>
           <p style={{ fontSize: '13pt', fontWeight: 600, color: pColor, margin: '0 0 18px 0' }}>
-            {formData.personal.title || 'Professional Title'}
+            {formData.personal?.title || 'Professional Title'}
           </p>
 
           {renderSummary('underline')}
           {renderExperience('underline')}
           {renderEducation('underline')}
           {renderProjects('underline')}
+          {renderAwards('underline')}
+          {renderPublications('underline')}
+          {renderVolunteer('underline')}
           {renderReferences('underline')}
         </div>
       </div>
@@ -542,30 +687,35 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
         {/* Full Width Top Banner */}
         <div style={{ backgroundColor: pColor, color: '#ffffff', padding: '32px 36px', width: '100%', boxSizing: 'border-box' }}>
           <h1 style={{ fontSize: '26pt', fontWeight: 800, color: '#ffffff', margin: '0 0 4px 0', fontFamily: headingFont }}>
-            {formData.personal.fullName || 'YOUR NAME'}
+            {formData.personal?.fullName || 'YOUR NAME'}
           </h1>
           <p style={{ fontSize: '13pt', fontWeight: 500, color: 'rgba(255, 255, 255, 0.9)', margin: '0 0 14px 0' }}>
-            {formData.personal.title || 'Professional Title'}
+            {formData.personal?.title || 'Professional Title'}
           </p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-            {formData.personal.email && (
+            {formData.personal?.email && (
               <span style={{ backgroundColor: 'rgba(255, 255, 255, 0.18)', padding: '4px 10px', borderRadius: '16px', fontSize: '8pt', color: '#fff' }}>
                 ✉ {formData.personal.email}
               </span>
             )}
-            {formData.personal.phone && (
+            {formData.personal?.phone && (
               <span style={{ backgroundColor: 'rgba(255, 255, 255, 0.18)', padding: '4px 10px', borderRadius: '16px', fontSize: '8pt', color: '#fff' }}>
                 📞 {formData.personal.phone}
               </span>
             )}
-            {formData.personal.address && (
+            {formData.personal?.address && (
               <span style={{ backgroundColor: 'rgba(255, 255, 255, 0.18)', padding: '4px 10px', borderRadius: '16px', fontSize: '8pt', color: '#fff' }}>
                 📍 {formData.personal.address}
               </span>
             )}
-            {formData.personal.portfolio && (
+            {formData.personal?.portfolio && (
               <span style={{ backgroundColor: 'rgba(255, 255, 255, 0.18)', padding: '4px 10px', borderRadius: '16px', fontSize: '8pt', color: '#fff' }}>
                 🌐 {formData.personal.portfolio}
+              </span>
+            )}
+            {formData.personal?.linkedin && (
+              <span style={{ backgroundColor: 'rgba(255, 255, 255, 0.18)', padding: '4px 10px', borderRadius: '16px', fontSize: '8pt', color: '#fff' }}>
+                💼 {formData.personal.linkedin}
               </span>
             )}
           </div>
@@ -577,13 +727,18 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
             {renderSummary('underline')}
             {renderExperience('underline')}
             {renderProjects('underline')}
+            {renderVolunteer('underline')}
+            {renderReferences('underline')}
           </div>
           <div>
             {renderEducation('underline')}
             {renderSkills('underline')}
             {renderCertifications('underline')}
+            {renderAwards('underline')}
+            {renderPublications('underline')}
             {renderLanguages('underline')}
-            {renderReferences('underline')}
+            {renderInterests('underline')}
+            {renderProfiles('underline')}
           </div>
         </div>
       </div>
@@ -598,16 +753,17 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
       <div id="resume-preview" className={styles.cvDocument} style={{ ...docBaseStyle, padding: '40px 45px' }}>
         <div style={{ textAlign: 'center', marginBottom: '22px' }}>
           <h1 style={{ fontSize: '24pt', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#0f172a', margin: '0 0 3px 0', fontFamily: headingFont }}>
-            {formData.personal.fullName || 'YOUR NAME'}
+            {formData.personal?.fullName || 'YOUR NAME'}
           </h1>
           <p style={{ fontSize: '11pt', color: '#475569', fontWeight: 500, margin: '0 0 8px 0' }}>
-            {formData.personal.title || 'Professional Title'}
+            {formData.personal?.title || 'Professional Title'}
           </p>
           <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: '6px 14px', fontSize: '8.5pt', color: '#64748b' }}>
-            {formData.personal.email && <span>{formData.personal.email}</span>}
-            {formData.personal.phone && <span>• {formData.personal.phone}</span>}
-            {formData.personal.address && <span>• {formData.personal.address}</span>}
-            {formData.personal.portfolio && <span>• {formData.personal.portfolio}</span>}
+            {formData.personal?.email && <span>{formData.personal.email}</span>}
+            {formData.personal?.phone && <span>• {formData.personal.phone}</span>}
+            {formData.personal?.address && <span>• {formData.personal.address}</span>}
+            {formData.personal?.portfolio && <span>• {formData.personal.portfolio}</span>}
+            {formData.personal?.linkedin && <span>• {formData.personal.linkedin}</span>}
           </div>
           <div style={{ height: '1px', backgroundColor: '#cbd5e1', margin: '14px 0 18px 0' }} />
         </div>
@@ -618,7 +774,12 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
         {renderProjects('underline')}
         {renderSkills('underline')}
         {renderCertifications('underline')}
+        {renderAwards('underline')}
+        {renderPublications('underline')}
+        {renderVolunteer('underline')}
         {renderLanguages('underline')}
+        {renderInterests('underline')}
+        {renderProfiles('underline')}
         {renderReferences('underline')}
       </div>
     );
@@ -632,16 +793,17 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
       <div id="resume-preview" className={styles.cvDocument} style={{ ...docBaseStyle, borderLeft: `8px solid ${pColor}`, padding: '35px 38px' }}>
         <div style={{ paddingBottom: '16px', borderBottom: `2px solid ${pColor}`, marginBottom: '22px' }}>
           <h1 style={{ fontSize: '25pt', fontWeight: 800, color: '#0f172a', margin: '0 0 3px 0', fontFamily: headingFont }}>
-            {formData.personal.fullName || 'YOUR NAME'}
+            {formData.personal?.fullName || 'YOUR NAME'}
           </h1>
           <p style={{ fontSize: '12pt', fontWeight: 600, color: pColor, margin: '0 0 8px 0' }}>
-            {formData.personal.title || 'Professional Title'}
+            {formData.personal?.title || 'Professional Title'}
           </p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 16px', fontSize: '8.5pt', color: '#64748b' }}>
-            {formData.personal.email && <span>✉ {formData.personal.email}</span>}
-            {formData.personal.phone && <span>📞 {formData.personal.phone}</span>}
-            {formData.personal.address && <span>📍 {formData.personal.address}</span>}
-            {formData.personal.portfolio && <span>🌐 {formData.personal.portfolio}</span>}
+            {formData.personal?.email && <span>✉ {formData.personal.email}</span>}
+            {formData.personal?.phone && <span>📞 {formData.personal.phone}</span>}
+            {formData.personal?.address && <span>📍 {formData.personal.address}</span>}
+            {formData.personal?.portfolio && <span>🌐 {formData.personal.portfolio}</span>}
+            {formData.personal?.linkedin && <span>💼 {formData.personal.linkedin}</span>}
           </div>
         </div>
 
@@ -651,11 +813,16 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
             {renderSkills('underline')}
             {renderCertifications('underline')}
             {renderLanguages('underline')}
+            {renderInterests('underline')}
+            {renderProfiles('underline')}
           </div>
           <div>
             {renderSummary('underline')}
             {renderExperience('underline')}
             {renderProjects('underline')}
+            {renderAwards('underline')}
+            {renderPublications('underline')}
+            {renderVolunteer('underline')}
             {renderReferences('underline')}
           </div>
         </div>
@@ -671,15 +838,17 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
       <div id="resume-preview" className={styles.cvDocument} style={{ ...docBaseStyle, padding: '35px 40px', backgroundColor: '#fcfcfc' }}>
         <div style={{ paddingBottom: '16px', borderBottom: `2px solid ${pColor}`, marginBottom: '22px' }}>
           <h1 style={{ fontSize: '26pt', fontWeight: 800, color: '#0f172a', margin: '0 0 3px 0', fontFamily: headingFont }}>
-            {formData.personal.fullName || 'YOUR NAME'}
+            {formData.personal?.fullName || 'YOUR NAME'}
           </h1>
           <p style={{ fontSize: '12pt', fontWeight: 600, color: pColor, margin: '0 0 8px 0' }}>
-            {formData.personal.title || 'Professional Title'}
+            {formData.personal?.title || 'Professional Title'}
           </p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 16px', fontSize: '8.5pt', color: '#64748b' }}>
-            {formData.personal.email && <span>✉ {formData.personal.email}</span>}
-            {formData.personal.phone && <span>📞 {formData.personal.phone}</span>}
-            {formData.personal.portfolio && <span>🌐 {formData.personal.portfolio}</span>}
+            {formData.personal?.email && <span>✉ {formData.personal.email}</span>}
+            {formData.personal?.phone && <span>📞 {formData.personal.phone}</span>}
+            {formData.personal?.address && <span>📍 {formData.personal.address}</span>}
+            {formData.personal?.portfolio && <span>🌐 {formData.personal.portfolio}</span>}
+            {formData.personal?.linkedin && <span>💼 {formData.personal.linkedin}</span>}
           </div>
         </div>
 
@@ -687,9 +856,14 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
         {renderExperience('underline', true)}
         {renderEducation('underline', true)}
         {renderProjects('underline', true)}
+        {renderAwards('underline', true)}
+        {renderPublications('underline', true)}
+        {renderVolunteer('underline', true)}
         {renderSkills('underline')}
         {renderCertifications('underline')}
         {renderLanguages('underline')}
+        {renderInterests('underline')}
+        {renderProfiles('underline')}
         {renderReferences('underline')}
       </div>
     );
@@ -707,20 +881,21 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
           ...docBaseStyle,
           display: 'grid',
           gridTemplateColumns: '67% 33%',
-          minHeight: '297mm',
         }}
       >
         {/* Left Main Content */}
         <div style={{ padding: '35px 28px', boxSizing: 'border-box', backgroundColor: '#ffffff' }}>
           <h1 style={{ fontSize: '26pt', fontWeight: 800, color: '#0f172a', margin: '0 0 3px 0', fontFamily: headingFont }}>
-            {formData.personal.fullName || 'YOUR NAME'}
+            {formData.personal?.fullName || 'YOUR NAME'}
           </h1>
           <p style={{ fontSize: '13pt', fontWeight: 600, color: pColor, margin: '0 0 18px 0' }}>
-            {formData.personal.title || 'Professional Title'}
+            {formData.personal?.title || 'Professional Title'}
           </p>
           {renderSummary('underline')}
           {renderExperience('underline')}
+          {renderEducation('underline')}
           {renderProjects('underline')}
+          {renderVolunteer('underline')}
           {renderReferences('underline')}
         </div>
 
@@ -731,29 +906,44 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
             <div style={{ fontSize: '9.5pt', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#0f172a', borderBottom: `2px solid ${pColor}`, paddingBottom: '3px', marginBottom: '10px', fontFamily: headingFont }}>
               Contact
             </div>
-            {formData.personal.email && (
+            {formData.personal?.email && (
               <div style={{ marginBottom: '8px', fontSize: '8.2pt' }}>
                 <div style={{ fontSize: '7pt', fontWeight: 700, textTransform: 'uppercase', color: '#94a3b8' }}>Email</div>
                 <div style={{ color: '#334155', wordBreak: 'break-all' }}>{formData.personal.email}</div>
               </div>
             )}
-            {formData.personal.phone && (
+            {formData.personal?.phone && (
               <div style={{ marginBottom: '8px', fontSize: '8.2pt' }}>
                 <div style={{ fontSize: '7pt', fontWeight: 700, textTransform: 'uppercase', color: '#94a3b8' }}>Phone</div>
                 <div style={{ color: '#334155' }}>{formData.personal.phone}</div>
               </div>
             )}
-            {formData.personal.address && (
+            {formData.personal?.address && (
               <div style={{ marginBottom: '8px', fontSize: '8.2pt' }}>
                 <div style={{ fontSize: '7pt', fontWeight: 700, textTransform: 'uppercase', color: '#94a3b8' }}>Location</div>
                 <div style={{ color: '#334155' }}>{formData.personal.address}</div>
               </div>
             )}
+            {formData.personal?.portfolio && (
+              <div style={{ marginBottom: '8px', fontSize: '8.2pt' }}>
+                <div style={{ fontSize: '7pt', fontWeight: 700, textTransform: 'uppercase', color: '#94a3b8' }}>Portfolio</div>
+                <div style={{ color: '#334155', wordBreak: 'break-all' }}>{formData.personal.portfolio}</div>
+              </div>
+            )}
+            {formData.personal?.linkedin && (
+              <div style={{ marginBottom: '8px', fontSize: '8.2pt' }}>
+                <div style={{ fontSize: '7pt', fontWeight: 700, textTransform: 'uppercase', color: '#94a3b8' }}>LinkedIn</div>
+                <div style={{ color: '#334155', wordBreak: 'break-all' }}>{formData.personal.linkedin}</div>
+              </div>
+            )}
           </div>
-          {renderEducation('underline')}
           {renderSkills('underline')}
           {renderCertifications('underline')}
+          {renderAwards('underline')}
+          {renderPublications('underline')}
           {renderLanguages('underline')}
+          {renderInterests('underline')}
+          {renderProfiles('underline')}
         </div>
       </div>
     );
@@ -767,15 +957,17 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
       <div id="resume-preview" className={styles.cvDocument} style={{ ...docBaseStyle, padding: '35px 40px' }}>
         <div style={{ paddingBottom: '16px', borderBottom: '2px solid #e2e8f0', marginBottom: '22px' }}>
           <h1 style={{ fontSize: '26pt', fontWeight: 800, color: '#0f172a', margin: '0 0 3px 0', fontFamily: headingFont }}>
-            {formData.personal.fullName || 'YOUR NAME'}
+            {formData.personal?.fullName || 'YOUR NAME'}
           </h1>
           <p style={{ fontSize: '13pt', fontWeight: 600, color: pColor, margin: '0 0 8px 0' }}>
-            {formData.personal.title || 'Professional Title'}
+            {formData.personal?.title || 'Professional Title'}
           </p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 16px', fontSize: '8.5pt', color: '#64748b' }}>
-            {formData.personal.email && <span>✉ {formData.personal.email}</span>}
-            {formData.personal.phone && <span>📞 {formData.personal.phone}</span>}
-            {formData.personal.portfolio && <span>🌐 {formData.personal.portfolio}</span>}
+            {formData.personal?.email && <span>✉ {formData.personal.email}</span>}
+            {formData.personal?.phone && <span>📞 {formData.personal.phone}</span>}
+            {formData.personal?.address && <span>📍 {formData.personal.address}</span>}
+            {formData.personal?.portfolio && <span>🌐 {formData.personal.portfolio}</span>}
+            {formData.personal?.linkedin && <span>💼 {formData.personal.linkedin}</span>}
           </div>
         </div>
 
@@ -802,9 +994,14 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
 
         {renderEducation('underline')}
         {renderProjects('underline')}
+        {renderAwards('underline')}
+        {renderPublications('underline')}
+        {renderVolunteer('underline')}
         {renderSkills('underline')}
         {renderCertifications('underline')}
         {renderLanguages('underline')}
+        {renderInterests('underline')}
+        {renderProfiles('underline')}
         {renderReferences('underline')}
       </div>
     );
@@ -819,14 +1016,16 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
         <div style={{ display: 'grid', gridTemplateColumns: '60% 40%', backgroundColor: pColor, color: '#ffffff', padding: '32px 38px' }}>
           <div>
             <h1 style={{ fontSize: '26pt', fontWeight: 800, margin: '0 0 3px 0', color: '#fff', fontFamily: headingFont }}>
-              {formData.personal.fullName || 'YOUR NAME'}
+              {formData.personal?.fullName || 'YOUR NAME'}
             </h1>
-            <p style={{ fontSize: '13pt', opacity: 0.9, margin: 0 }}>{formData.personal.title || 'Professional Title'}</p>
+            <p style={{ fontSize: '13pt', opacity: 0.9, margin: 0 }}>{formData.personal?.title || 'Professional Title'}</p>
           </div>
           <div style={{ backgroundColor: 'rgba(255,255,255,0.15)', padding: '12px', borderRadius: '6px', fontSize: '8.2pt', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            {formData.personal.email && <div>✉ {formData.personal.email}</div>}
-            {formData.personal.phone && <div>📞 {formData.personal.phone}</div>}
-            {formData.personal.portfolio && <div>🌐 {formData.personal.portfolio}</div>}
+            {formData.personal?.email && <div>✉ {formData.personal.email}</div>}
+            {formData.personal?.phone && <div>📞 {formData.personal.phone}</div>}
+            {formData.personal?.address && <div>📍 {formData.personal.address}</div>}
+            {formData.personal?.portfolio && <div>🌐 {formData.personal.portfolio}</div>}
+            {formData.personal?.linkedin && <div>💼 {formData.personal.linkedin}</div>}
           </div>
         </div>
 
@@ -835,9 +1034,14 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
           {renderExperience('bold')}
           {renderEducation('bold')}
           {renderProjects('bold')}
+          {renderAwards('bold')}
+          {renderPublications('bold')}
+          {renderVolunteer('bold')}
           {renderSkills('bold')}
           {renderCertifications('bold')}
           {renderLanguages('bold')}
+          {renderInterests('bold')}
+          {renderProfiles('bold')}
           {renderReferences('bold')}
         </div>
       </div>
@@ -854,15 +1058,17 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
           {renderAvatar(75, pColor)}
           <div>
             <h1 style={{ fontSize: '25pt', fontWeight: 800, color: '#0f172a', margin: '0 0 3px 0', fontFamily: headingFont }}>
-              {formData.personal.fullName || 'YOUR NAME'}
+              {formData.personal?.fullName || 'YOUR NAME'}
             </h1>
             <p style={{ fontSize: '12pt', fontWeight: 600, color: pColor, margin: '0 0 8px 0' }}>
-              {formData.personal.title || 'Professional Title'}
+              {formData.personal?.title || 'Professional Title'}
             </p>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 14px', fontSize: '8.5pt', color: '#64748b' }}>
-              {formData.personal.email && <span>{formData.personal.email}</span>}
-              {formData.personal.phone && <span>{formData.personal.phone}</span>}
-              {formData.personal.portfolio && <span>{formData.personal.portfolio}</span>}
+              {formData.personal?.email && <span>✉ {formData.personal.email}</span>}
+              {formData.personal?.phone && <span>📞 {formData.personal.phone}</span>}
+              {formData.personal?.address && <span>📍 {formData.personal.address}</span>}
+              {formData.personal?.portfolio && <span>🌐 {formData.personal.portfolio}</span>}
+              {formData.personal?.linkedin && <span>💼 {formData.personal.linkedin}</span>}
             </div>
           </div>
         </div>
@@ -871,9 +1077,14 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
         {renderExperience('pill')}
         {renderEducation('pill')}
         {renderProjects('pill')}
+        {renderAwards('pill')}
+        {renderPublications('pill')}
+        {renderVolunteer('pill')}
         {renderSkills('pill')}
         {renderCertifications('pill')}
         {renderLanguages('pill')}
+        {renderInterests('pill')}
+        {renderProfiles('pill')}
         {renderReferences('pill')}
       </div>
     );
@@ -888,13 +1099,15 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
         <div style={{ backgroundColor: '#0f172a', color: '#38bdf8', padding: '20px 24px', borderRadius: '8px', fontFamily: 'monospace', marginBottom: '22px' }}>
           <div style={{ opacity: 0.6, fontSize: '8pt', marginBottom: '4px' }}>{"// DEVELOPER_PROFILE_INITIALIZED"}</div>
           <h1 style={{ fontSize: '22pt', margin: '0 0 2px 0', color: '#fff', fontFamily: headingFont }}>
-            {formData.personal.fullName || 'YOUR NAME'}
+            {formData.personal?.fullName || 'YOUR NAME'}
           </h1>
-          <p style={{ fontSize: '11pt', color: '#38bdf8', margin: '0 0 8px 0' }}>{`> ${formData.personal.title || 'Professional Title'}`}</p>
+          <p style={{ fontSize: '11pt', color: '#38bdf8', margin: '0 0 8px 0' }}>{`> ${formData.personal?.title || 'Professional Title'}`}</p>
           <div style={{ fontSize: '8.5pt', color: '#94a3b8', display: 'flex', flexWrap: 'wrap', gap: '14px' }}>
-            {formData.personal.email && <span>{`email: "${formData.personal.email}"`}</span>}
-            {formData.personal.phone && <span>{`phone: "${formData.personal.phone}"`}</span>}
-            {formData.personal.portfolio && <span>{`web: "${formData.personal.portfolio}"`}</span>}
+            {formData.personal?.email && <span>{`email: "${formData.personal.email}"`}</span>}
+            {formData.personal?.phone && <span>{`phone: "${formData.personal.phone}"`}</span>}
+            {formData.personal?.address && <span>{`location: "${formData.personal.address}"`}</span>}
+            {formData.personal?.portfolio && <span>{`web: "${formData.personal.portfolio}"`}</span>}
+            {formData.personal?.linkedin && <span>{`linkedin: "${formData.personal.linkedin}"`}</span>}
           </div>
         </div>
 
@@ -902,9 +1115,14 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
         {renderExperience('terminal')}
         {renderEducation('terminal')}
         {renderProjects('terminal')}
+        {renderAwards('terminal')}
+        {renderPublications('terminal')}
+        {renderVolunteer('terminal')}
         {renderSkills('terminal')}
         {renderCertifications('terminal')}
         {renderLanguages('terminal')}
+        {renderInterests('terminal')}
+        {renderProfiles('terminal')}
         {renderReferences('terminal')}
       </div>
     );
@@ -919,16 +1137,18 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
         <div style={{ borderTop: `3px solid ${pColor}`, borderBottom: '1px solid #cbd5e1', padding: '16px 0', marginBottom: '22px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
           <div>
             <h1 style={{ fontSize: '25pt', fontWeight: 800, color: '#0f172a', margin: '0 0 3px 0', fontFamily: 'Georgia, serif' }}>
-              {formData.personal.fullName || 'YOUR NAME'}
+              {formData.personal?.fullName || 'YOUR NAME'}
             </h1>
             <p style={{ fontSize: '12pt', fontStyle: 'italic', color: pColor, margin: 0 }}>
-              {formData.personal.title || 'Professional Title'}
+              {formData.personal?.title || 'Professional Title'}
             </p>
           </div>
           <div style={{ textAlign: 'right', fontSize: '8.5pt', color: '#64748b' }}>
-            {formData.personal.email && <div>{formData.personal.email}</div>}
-            {formData.personal.phone && <div>{formData.personal.phone}</div>}
-            {formData.personal.portfolio && <div>{formData.personal.portfolio}</div>}
+            {formData.personal?.email && <div>{formData.personal.email}</div>}
+            {formData.personal?.phone && <div>{formData.personal.phone}</div>}
+            {formData.personal?.address && <div>{formData.personal.address}</div>}
+            {formData.personal?.portfolio && <div>{formData.personal.portfolio}</div>}
+            {formData.personal?.linkedin && <div>{formData.personal.linkedin}</div>}
           </div>
         </div>
 
@@ -936,9 +1156,14 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
         {renderExperience('underline')}
         {renderEducation('underline')}
         {renderProjects('underline')}
+        {renderAwards('underline')}
+        {renderPublications('underline')}
+        {renderVolunteer('underline')}
         {renderSkills('underline')}
         {renderCertifications('underline')}
         {renderLanguages('underline')}
+        {renderInterests('underline')}
+        {renderProfiles('underline')}
         {renderReferences('underline')}
       </div>
     );
@@ -951,31 +1176,40 @@ export const CvTemplateRenderer: React.FC<CvTemplateRendererProps> = ({
     <div id="resume-preview" className={styles.cvDocument} style={{ ...docBaseStyle, padding: '32px 38px', borderTop: `5px solid ${pColor}` }}>
       <div style={{ paddingBottom: '16px', borderBottom: '2px solid #e2e8f0', marginBottom: '20px' }}>
         <h1 style={{ fontSize: '25pt', fontWeight: 800, color: '#0f172a', margin: '0 0 3px 0', fontFamily: headingFont }}>
-          {formData.personal.fullName || 'YOUR NAME'}
+          {formData.personal?.fullName || 'YOUR NAME'}
         </h1>
         <p style={{ fontSize: '12pt', fontWeight: 600, color: pColor, margin: '0 0 8px 0' }}>
-          {formData.personal.title || 'Professional Title'}
+          {formData.personal?.title || 'Professional Title'}
         </p>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 16px', fontSize: '8.5pt', color: '#64748b' }}>
-          {formData.personal.email && <span>✉ {formData.personal.email}</span>}
-          {formData.personal.phone && <span>📞 {formData.personal.phone}</span>}
-          {formData.personal.portfolio && <span>🌐 {formData.personal.portfolio}</span>}
+          {formData.personal?.email && <span>✉ {formData.personal.email}</span>}
+          {formData.personal?.phone && <span>📞 {formData.personal.phone}</span>}
+          {formData.personal?.address && <span>📍 {formData.personal.address}</span>}
+          {formData.personal?.portfolio && <span>🌐 {formData.personal.portfolio}</span>}
+          {formData.personal?.linkedin && <span>💼 {formData.personal.linkedin}</span>}
         </div>
       </div>
 
       {renderSummary('underline')}
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '22px' }}>
-        <div>{renderExperience('underline')}</div>
+        <div>
+          {renderExperience('underline')}
+          {renderVolunteer('underline')}
+        </div>
         <div>
           {renderEducation('underline')}
           {renderCertifications('underline')}
+          {renderAwards('underline')}
+          {renderPublications('underline')}
         </div>
       </div>
 
       {renderProjects('underline')}
       {renderSkills('underline')}
       {renderLanguages('underline')}
+      {renderInterests('underline')}
+      {renderProfiles('underline')}
       {renderReferences('underline')}
     </div>
   );

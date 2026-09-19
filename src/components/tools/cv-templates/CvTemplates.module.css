@@ -2,13 +2,14 @@
 .cvDocument {
   width: 210mm;
   min-height: 297mm;
+  height: auto;
   background: #ffffff;
   color: #1f2937;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
   box-sizing: border-box;
   margin: 0 auto;
   position: relative;
-  overflow: hidden;
+  overflow: visible;
 }
 
 @media print {
@@ -17,6 +18,7 @@
     margin: 0 !important;
     width: 210mm !important;
     min-height: 297mm !important;
+    height: auto !important;
   }
 }
 
