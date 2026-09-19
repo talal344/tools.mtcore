@@ -281,22 +281,45 @@ const CvBuilderClient = () => {
     }));
   };
 
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
   const handleGenerateAI = async () => {
     setIsLoading(true);
+    setError(null);
+    setSuccessMsg(null);
     try {
       const response = await fetch('/api/tools/cv-builder', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: [{ role: 'user', content: `POLISH_CV mode. Data: ${JSON.stringify(formData)}.` }] }),
+        body: JSON.stringify({ mode: 'POLISH_CV', formData }),
       });
-      const data = await response.json();
-      const polishedData = JSON.parse(data.content);
       
-      const newFormData = { ...formData, ...polishedData };
+      if (!response.ok) {
+        throw new Error('AI Polish service encountered an issue');
+      }
+
+      const data = await response.json();
+      const polishedData = typeof data.content === 'string' ? JSON.parse(data.content) : data.content;
+      
+      const newFormData: CVData = {
+        ...formData,
+        aiSummary: polishedData.aiSummary || formData.aiSummary,
+        experience: (formData.experience || []).map((exp, idx) => {
+          const polishedExp = polishedData.experience?.[idx];
+          return {
+            ...exp,
+            responsibilities: polishedExp?.responsibilities || exp.responsibilities,
+          };
+        }),
+      };
+
       pushHistory(newFormData);
       setFormData(newFormData);
-    } catch { 
-      setError('AI error.'); 
+      setSuccessMsg('✨ Resume polished successfully with high-impact action verbs and ATS keywords!');
+      setTimeout(() => setSuccessMsg(null), 5000);
+    } catch (err) { 
+      console.error('AI error:', err);
+      setError('AI Polish could not process at this moment.'); 
     }
     finally { setIsLoading(false); }
   };
@@ -305,27 +328,38 @@ const CvBuilderClient = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/tools/cv-builder', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mode: 'EXPORT_PDF', formData, template: selectedTemplate }),
-      });
-      
-      if (!response.ok) {
-        // Fallback to direct print window
-        handlePrint();
-        return;
+      const resumeEl = document.getElementById('resume-preview');
+      if (!resumeEl) {
+        throw new Error('Resume element not found');
       }
 
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${resumeTitle || 'Resume'}.pdf`;
-      a.click();
-      setTimeout(() => window.URL.revokeObjectURL(url), 100);
-    } catch { 
-      // Direct high-fidelity browser print fallback
+      const html2canvas = (await import('html2canvas')).default;
+      const { jsPDF } = await import('jspdf');
+
+      const canvas = await html2canvas(resumeEl, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+      });
+
+      const imgData = canvas.toDataURL('image/png', 1.0);
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
+        compress: true,
+      });
+
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, Math.min(imgHeight, pdfHeight));
+      const filename = `${(formData.personal.fullName || resumeTitle || 'Resume').trim().replace(/\s+/g, '_')}_CV.pdf`;
+      pdf.save(filename);
+    } catch (err) { 
+      console.error('PDF export error, falling back to print dialog:', err);
       handlePrint();
     }
     finally { setIsLoading(false); }
@@ -398,6 +432,13 @@ const CvBuilderClient = () => {
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
           <span>{error}</span>
           <button className={styles.closeError} onClick={() => setError(null)}>×</button>
+        </div>
+      )}
+      {successMsg && (
+        <div className={styles.successBanner}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          <span>{successMsg}</span>
+          <button className={styles.closeError} onClick={() => setSuccessMsg(null)}>×</button>
         </div>
       )}
       <header className={styles.toolbar}>

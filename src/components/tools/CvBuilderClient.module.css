@@ -25,6 +25,19 @@
   animation: slideDown 0.3s ease-out;
 }
 
+.successBanner {
+  background: rgba(16, 185, 129, 0.95);
+  color: #fff;
+  padding: 12px 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  z-index: 1000;
+  animation: slideDown 0.3s ease-out;
+}
+
 @keyframes slideDown {
   from { transform: translateY(-100%); }
   to { transform: translateY(0); }
