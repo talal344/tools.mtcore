@@ -403,9 +403,14 @@ const CvBuilderClient = () => {
 
   const handleCancelDownload = (e?: React.SyntheticEvent) => {
     if (e) {
+      e.preventDefault();
       e.stopPropagation();
     }
     abortDownloadRef.current = true;
+    const overlay = document.getElementById('pdf-progress-overlay');
+    if (overlay) {
+      overlay.style.display = 'none';
+    }
     setDownloadProgress({ isOpen: false, percent: 0, status: '' });
     setIsLoading(false);
   };
@@ -415,15 +420,14 @@ const CvBuilderClient = () => {
     setError(null);
     abortDownloadRef.current = false;
 
-    const setProgressAsync = async (percent: number, status: string, delayMs = 70) => {
+    const existingOverlay = document.getElementById('pdf-progress-overlay');
+    if (existingOverlay) {
+      existingOverlay.style.display = '';
+    }
+
+    const setProgressAsync = async (percent: number, status: string, delayMs = 60) => {
       if (abortDownloadRef.current) return;
-      setDownloadProgress(() => {
-        if (abortDownloadRef.current) {
-          return { isOpen: false, percent: 0, status: '' };
-        }
-        return { isOpen: true, percent, status };
-      });
-      if (abortDownloadRef.current) return;
+      setDownloadProgress({ isOpen: true, percent, status });
       await new Promise(resolve => setTimeout(resolve, delayMs));
       if (abortDownloadRef.current) return;
     };
@@ -434,13 +438,13 @@ const CvBuilderClient = () => {
         throw new Error('Resume element not found');
       }
 
-      await setProgressAsync(12, 'Initializing high-resolution PDF engine...', 90);
+      await setProgressAsync(12, 'Initializing high-resolution PDF engine...', 70);
       if (abortDownloadRef.current) return;
 
       const html2canvas = (await import('html2canvas')).default;
       const { jsPDF } = await import('jspdf');
 
-      await setProgressAsync(25, 'Preparing document pages...', 80);
+      await setProgressAsync(25, 'Preparing document pages...', 70);
       if (abortDownloadRef.current) return;
 
       const pageElements = resumeEl.querySelectorAll<HTMLElement>('.resume-page');
@@ -462,7 +466,7 @@ const CvBuilderClient = () => {
           await setProgressAsync(
             startPercent + 8,
             `Capturing Page ${i + 1} of ${totalPages} in vector quality...`,
-            90
+            70
           );
           if (abortDownloadRef.current) return;
 
@@ -470,23 +474,18 @@ const CvBuilderClient = () => {
             pdf.addPage();
           }
 
-          // Small yield to let browser handle mouse events/cancellations
+          // Small yield to let browser handle user interactions
           await new Promise(resolve => setTimeout(resolve, 50));
           if (abortDownloadRef.current) return;
 
-          const pageCanvas = await Promise.race([
-            html2canvas(pageElements[i], {
-              scale: 2,
-              useCORS: true,
-              allowTaint: true,
-              imageTimeout: 4000,
-              logging: false,
-              backgroundColor: design.backgroundColor || '#ffffff',
-            }),
-            new Promise<never>((_, reject) =>
-              setTimeout(() => reject(new Error('Page rendering timeout')), 10000)
-            )
-          ]);
+          const pageCanvas = await html2canvas(pageElements[i], {
+            scale: 2,
+            useCORS: false,
+            allowTaint: true,
+            imageTimeout: 2000,
+            logging: false,
+            backgroundColor: design.backgroundColor || '#ffffff',
+          });
           if (abortDownloadRef.current) return;
 
           const imgData = pageCanvas.toDataURL('image/png', 1.0);
@@ -495,35 +494,30 @@ const CvBuilderClient = () => {
           await setProgressAsync(
             endPercent,
             `Page ${i + 1} of ${totalPages} rendered successfully`,
-            80
+            70
           );
           if (abortDownloadRef.current) return;
         }
       } else {
-        await setProgressAsync(50, 'Rendering document...', 90);
+        await setProgressAsync(50, 'Rendering document...', 70);
         if (abortDownloadRef.current) return;
 
         await new Promise(resolve => setTimeout(resolve, 50));
         if (abortDownloadRef.current) return;
 
-        const canvas = await Promise.race([
-          html2canvas(resumeEl, {
-            scale: 2,
-            useCORS: true,
-            allowTaint: true,
-            imageTimeout: 4000,
-            logging: false,
-            backgroundColor: design.backgroundColor || '#ffffff',
-          }),
-          new Promise<never>((_, reject) =>
-            setTimeout(() => reject(new Error('Document rendering timeout')), 10000)
-          )
-        ]);
+        const canvas = await html2canvas(resumeEl, {
+          scale: 2,
+          useCORS: false,
+          allowTaint: true,
+          imageTimeout: 2000,
+          logging: false,
+          backgroundColor: design.backgroundColor || '#ffffff',
+        });
         if (abortDownloadRef.current) return;
 
         const imgData = canvas.toDataURL('image/png', 1.0);
         pdf.addImage(imgData, 'PNG', 0, 0, 210, 297);
-        await setProgressAsync(80, 'Document captured successfully', 80);
+        await setProgressAsync(80, 'Document captured successfully', 70);
         if (abortDownloadRef.current) return;
       }
 
@@ -635,21 +629,21 @@ const CvBuilderClient = () => {
       )}
       {downloadProgress.isOpen && (
         <div 
+          id="pdf-progress-overlay"
           className={styles.progressOverlay}
           onClick={(e) => {
             if (e.target === e.currentTarget) handleCancelDownload(e);
           }}
-          onMouseDown={(e) => {
+          onPointerDown={(e) => {
             if (e.target === e.currentTarget) handleCancelDownload(e);
           }}
         >
-          <div className={styles.progressCard} onClick={(e) => e.stopPropagation()}>
+          <div className={styles.progressCard}>
             <button 
               type="button" 
               className={styles.progressCloseBtn} 
               onClick={handleCancelDownload}
-              onMouseDown={handleCancelDownload}
-              onTouchStart={handleCancelDownload}
+              onPointerDown={handleCancelDownload}
               title="Cancel & Close"
               aria-label="Cancel download"
             >
@@ -669,8 +663,7 @@ const CvBuilderClient = () => {
               type="button" 
               className={styles.progressCancelBtn} 
               onClick={handleCancelDownload}
-              onMouseDown={handleCancelDownload}
-              onTouchStart={handleCancelDownload}
+              onPointerDown={handleCancelDownload}
             >
               Cancel Download
             </button>
